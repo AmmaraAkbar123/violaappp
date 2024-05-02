@@ -1,21 +1,31 @@
 import 'package:flutter/material.dart';
 
 
-final Theme = ThemeData(
+final ThemeData myTheme = ThemeData(
 
-  primaryColor: Color(0xFF4B005F),
-  hintColor: Color(0xFFF9F9F9),
+  primaryColor: const Color(0xFF4B005F),
+  hintColor: const Color.fromARGB(190, 249, 249, 249),
   brightness: Brightness.light,
-  dividerColor: Color(0xFFFFE69B),
-  drawerTheme: DrawerThemeData(
-    backgroundColor: Color(0xFFEFE0F3)
+  dividerColor: const Color(0xFFFFE69B),
+  drawerTheme: const DrawerThemeData(
+    backgroundColor: Colors.white,
+    
   ),
 
-  appBarTheme: AppBarTheme(
-    color: Color(0xFF4B005F),
+  appBarTheme: const AppBarTheme(
+  
+    backgroundColor: Color(0xFF4B005F),
+    titleTextStyle: TextStyle(
+      color: Colors.white,
+      fontSize: 10
+    ),
+    iconTheme: IconThemeData(
+      color: Color.fromRGBO(255, 255, 255, 1),
+      size: 16
+    )
   ),
 
-  iconButtonTheme: IconButtonThemeData(
+  iconButtonTheme: const IconButtonThemeData(
     style: ButtonStyle(
       iconColor: MaterialStatePropertyAll(Color(0xFFF9FCF5))
     )
@@ -36,7 +46,7 @@ final Theme = ThemeData(
       
       ),
     ),
-    iconTheme: IconThemeData(
+    iconTheme: const IconThemeData(
       color: Color(0xFFF9F9F9),
     ),
 );
