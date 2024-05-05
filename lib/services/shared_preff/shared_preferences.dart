@@ -15,10 +15,9 @@ class PreferencesService {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove(key);
   }
-  
-  void saveToken(String token) async {
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  await prefs.setString('auth_token', token);
-}
 
+  void saveToken(String token) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+  }
 }

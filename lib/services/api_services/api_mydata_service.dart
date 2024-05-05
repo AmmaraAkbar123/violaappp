@@ -5,7 +5,6 @@ import 'package:viola/json_models/mydata_model.dart';
 class DataApiService {
   Uri _baseUri = Uri.parse('http://dev.viola.myignite.online/api/salons');
 
-
   // Modified fetchData to accept a page number.
   Future<Mydata> fetchData({int page = 1}) async {
     var parameters = {
@@ -32,9 +31,12 @@ class DataApiService {
       if (response.statusCode == 200) {
         var jsonData = json.decode(response.body);
         // Using a generic method to deserialize JSON based on the type parameter T
-        return T == Mydata ? Mydata.fromJson(jsonData) as T : Datum.fromJson(jsonData['data']) as T;
+        return T == Mydata
+            ? Mydata.fromJson(jsonData) as T
+            : Datum.fromJson(jsonData['data']) as T;
       } else {
-        throw Exception('Failed to load data with status code: ${response.statusCode}');
+        throw Exception(
+            'Failed to load data with status code: ${response.statusCode}');
       }
     } catch (e) {
       print("Error during JSON parsing: $e");

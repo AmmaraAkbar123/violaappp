@@ -1,4 +1,3 @@
-
 class Mydata {
   bool success;
   Data data;
@@ -120,7 +119,6 @@ class Datum {
   String dailyNotesLength;
   String generalNotesLength;
 
-
   Datum({
     required this.distance,
     required this.area,
@@ -148,58 +146,57 @@ class Datum {
     required this.media,
     required this.availabilityHours,
     required this.bookingMethod,
-
     required this.generalNotes,
     required this.dailyNotes,
     required this.promotions,
     required this.dailyNotesLength,
     required this.generalNotesLength,
-  
-    
   });
 
   factory Datum.fromJson(Map<String, dynamic> json) {
- 
-  return Datum(
-    distance: (json["distance"] as num?)?.toDouble() ?? 0.0,
-    area: (json["area"] as num?)?.toDouble() ?? 0.0,
-    id: json["id"] as int? ?? 0,
-    name: Description.fromJson(json["name"] as Map<String, dynamic>? ?? {'en': 'No name'}),
-    salonLevelId: json["salon_level_id"] as int? ?? 0,
-    addressId: json["address_id"] as int? ?? 0,
-    description: Description.fromJson(json["description"] as Map<String, dynamic>? ?? {'en': 'No description'}),
-    phoneNumber: json["phone_number"] as String? ?? '',
-    mobileNumber: json["mobile_number"] as String? ?? '',
-    availabilityRange: json["availability_range"] as int? ?? 0,
-    available: json["available"] as bool? ?? false,
-    featured: json["featured"] as bool? ?? false,
-    accepted: json["accepted"] as bool? ?? false,
-    serviceDesc: json["service_desc"] as String? ?? '',
-    addressDesc: json["address_desc"] as String? ?? '',
-    homeDesc: json["home_desc"] as String? ?? '',
-    descriptionLength: json["description_length"] as String? ?? '',
-    showOnHomePage: json["show_on_home_page"] as int? ?? 0,
-    tags: json["tags"] as String? ?? '',
-    hasMedia: json["has_media"] as bool? ?? false,
-    rate: json["rate"] as int? ?? 0,
-    closed: json["closed"] as bool? ?? false,
-    totalReviews: json["total_reviews"] as int? ?? 0,
-    media: (json["media"] as List<dynamic>?)
-        ?.map((x) => Media.fromJson(x as Map<String, dynamic>))
-        .toList() ?? [],
-    availabilityHours: (json["availability_hours"] as List<dynamic>?)
-        ?.map((x) => AvailabilityHour.fromJson(x as Map<String, dynamic>))
-        .toList() ?? [],
-    bookingMethod: json["booking_method"] as String? ?? '',
-    generalNotes: json["general_notes"] as String? ?? '',
-    dailyNotes: json["daily_notes"] as String? ?? '',
-    promotions: json["promotions"] as String? ?? '',
-
-    dailyNotesLength: json["daily_notes_length"] as String? ?? '',
-    generalNotesLength: json["general_notes_length"] as String? ?? '',
-  );
-}
-
+    return Datum(
+      distance: (json["distance"] as num?)?.toDouble() ?? 0.0,
+      area: (json["area"] as num?)?.toDouble() ?? 0.0,
+      id: json["id"] as int? ?? 0,
+      name: Description.fromJson(
+          json["name"] as Map<String, dynamic>? ?? {'en': 'No name'}),
+      salonLevelId: json["salon_level_id"] as int? ?? 0,
+      addressId: json["address_id"] as int? ?? 0,
+      description: Description.fromJson(
+          json["description"] as Map<String, dynamic>? ??
+              {'en': 'No description'}),
+      phoneNumber: json["phone_number"] as String? ?? '',
+      mobileNumber: json["mobile_number"] as String? ?? '',
+      availabilityRange: json["availability_range"] as int? ?? 0,
+      available: json["available"] as bool? ?? false,
+      featured: json["featured"] as bool? ?? false,
+      accepted: json["accepted"] as bool? ?? false,
+      serviceDesc: json["service_desc"] as String? ?? '',
+      addressDesc: json["address_desc"] as String? ?? '',
+      homeDesc: json["home_desc"] as String? ?? '',
+      descriptionLength: json["description_length"] as String? ?? '',
+      showOnHomePage: json["show_on_home_page"] as int? ?? 0,
+      tags: json["tags"] as String? ?? '',
+      hasMedia: json["has_media"] as bool? ?? false,
+      rate: json["rate"] as int? ?? 0,
+      closed: json["closed"] as bool? ?? false,
+      totalReviews: json["total_reviews"] as int? ?? 0,
+      media: (json["media"] as List<dynamic>?)
+              ?.map((x) => Media.fromJson(x as Map<String, dynamic>))
+              .toList() ??
+          [],
+      availabilityHours: (json["availability_hours"] as List<dynamic>?)
+              ?.map((x) => AvailabilityHour.fromJson(x as Map<String, dynamic>))
+              .toList() ??
+          [],
+      bookingMethod: json["booking_method"] as String? ?? '',
+      generalNotes: json["general_notes"] as String? ?? '',
+      dailyNotes: json["daily_notes"] as String? ?? '',
+      promotions: json["promotions"] as String? ?? '',
+      dailyNotesLength: json["daily_notes_length"] as String? ?? '',
+      generalNotesLength: json["general_notes_length"] as String? ?? '',
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         "distance": distance,
@@ -229,14 +226,11 @@ class Datum {
         "availability_hours":
             List<dynamic>.from(availabilityHours.map((x) => x.toJson())),
         "booking_method": bookingMethod,
-
         "general_notes": generalNotes,
         "daily_notes": dailyNotes,
         "promotions": promotions,
-        
         "daily_notes_length": dailyNotesLength,
         "general_notes_length": generalNotesLength,
-
       };
 }
 
@@ -295,8 +289,8 @@ class Description {
   }
 
   Map<String, dynamic> toJson() => {
-    'en': en,
-  };
+        'en': en,
+      };
 }
 
 class Media {

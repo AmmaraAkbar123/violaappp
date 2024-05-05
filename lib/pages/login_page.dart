@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:viola/auth/view_model.dart';
 
 class LoginPageScreen extends StatelessWidget {
-   LoginPageScreen({Key? key}) : super(key: key);
+  LoginPageScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -147,130 +147,133 @@ class LoginPageScreen extends StatelessWidget {
                       )
                     :
                     //Phone Number Field
-                   Container(
-      margin: EdgeInsets.fromLTRB(20, 5, 20, 5),
-      decoration: BoxDecoration(
-        color: Color.fromARGB(255, 234, 234, 234),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      width: MediaQuery.of(context).size.width,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'رقم الهاتف',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromRGBO(75, 0, 95, 1),
-                  ),
-                ),
-                SizedBox(height: 10),
-                Directionality(
-                  textDirection: TextDirection.ltr,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                    child: Row(
-                      children: [
-                        Image.asset(
-                          'assets/images/flag-icon.png',
-                          width: 40,
-                          height: 40,
+                    Container(
+                        margin: EdgeInsets.fromLTRB(20, 5, 20, 5),
+                        decoration: BoxDecoration(
+                          color: Color.fromARGB(255, 234, 234, 234),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        SizedBox(width: 10),
-                        Text(
-                          '+966',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color.fromRGBO(75, 0, 95, 1),
-                          ),
-                        ),
-                        SizedBox(width: 5,),
-                        Expanded(
-                          child: TextField(
-                            controller:    viewModel.phoneController,
-                            keyboardType: TextInputType.phone,
-                            decoration: InputDecoration(
-                              hintText: '5xxxxxxx',
-                              border: InputBorder.none,
-                              counterText: ""
+                        width: MediaQuery.of(context).size.width,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'رقم الهاتف',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color.fromRGBO(75, 0, 95, 1),
+                                    ),
+                                  ),
+                                  SizedBox(height: 10),
+                                  Directionality(
+                                    textDirection: TextDirection.ltr,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 0),
+                                      child: Row(
+                                        children: [
+                                          Image.asset(
+                                            'assets/images/flag-icon.png',
+                                            width: 40,
+                                            height: 40,
+                                          ),
+                                          SizedBox(width: 10),
+                                          Text(
+                                            '+966',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color:
+                                                  Color.fromRGBO(75, 0, 95, 1),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: 5,
+                                          ),
+                                          Expanded(
+                                            child: TextField(
+                                              controller:
+                                                  viewModel.phoneController,
+                                              keyboardType: TextInputType.phone,
+                                              decoration: InputDecoration(
+                                                  hintText: '5xxxxxxx',
+                                                  border: InputBorder.none,
+                                                  counterText: ""),
+                                              textAlign: TextAlign.left,
+                                              maxLength: 9,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            textAlign: TextAlign.left,
-                            maxLength: 9,
-                          ),
+                          ],
+                        ),
+                      ),
+                SizedBox(
+                  height: 40,
+                ),
+                //Registration Button
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color.fromRGBO(75, 0, 95, 1).withOpacity(0.3),
+                          spreadRadius: 3,
+                          blurRadius: 10,
                         ),
                       ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // Check if OTP has been requested and needs to be verified
+                        if (viewModel.isOTPRequested) {
+                          // Verify OTP
+                          viewModel.verifyOTP(context);
+                        } else {
+                          // Otherwise, verify the phone number which should lead to OTP being sent
+                          viewModel.verifyPhoneNumber(context);
+                        }
+                      },
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(
+                            Color.fromRGBO(75, 0, 95, 1)),
+                        foregroundColor:
+                            MaterialStateProperty.all<Color>(Colors.white),
+                        padding: MaterialStateProperty.all<EdgeInsets>(
+                            EdgeInsets.symmetric(vertical: 14)),
+                        shape:
+                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                          RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                      child: Text(
+                        viewModel.isOTPRequested ? 'تحقق من الرمز' : 'الدخول',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    ),
-                SizedBox(
-                  height: 40,
-                ),
-                //Registration Button
-               Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Color.fromRGBO(75, 0, 95, 1).withOpacity(0.3),
-              spreadRadius: 3,
-              blurRadius: 10,
-            ),
-          ],
         ),
-        child: ElevatedButton(
-                            onPressed: () {
-                              // Check if OTP has been requested and needs to be verified
-                              if (viewModel.isOTPRequested) {
-                                // Verify OTP
-                                viewModel.verifyOTP(context);
-                              } else {
-                                // Otherwise, verify the phone number which should lead to OTP being sent
-                                viewModel.verifyPhoneNumber(context);
-                              }
-                            },
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all<Color>(
-                                  Color.fromRGBO(75, 0, 95, 1)),
-                              foregroundColor: MaterialStateProperty.all<Color>(
-                                  Colors.white),
-                              padding: MaterialStateProperty.all<EdgeInsets>(
-                                  EdgeInsets.symmetric(vertical: 14)),
-                              shape: MaterialStateProperty.all<
-                                  RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
-                            child: Text(
-                              viewModel.isOTPRequested
-                                  ? 'تحقق من الرمز'
-                                  : 'الدخول',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
       ),
-    ),
     );
   }
 

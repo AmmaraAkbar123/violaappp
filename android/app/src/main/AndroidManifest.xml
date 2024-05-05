@@ -7,7 +7,8 @@
     <application
         android:label="viola"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
          <meta-data android:name="com.google.android.geo.API_KEY"
                    android:value="AIzaSyAL4OhK2DnU0XMcj0VZgwfc4DKRKLdOdv0"/>
         <activity

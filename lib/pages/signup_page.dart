@@ -7,50 +7,55 @@ import 'package:viola/providers/adress_provider.dart';
 import 'package:viola/providers/user_provider.dart';
 
 class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _locationController = TextEditingController();
 
   void _registerUser() async {
-  String cityName = await Provider.of<AddressProvider>(context, listen: false).getCurrentCityName();
+    String cityName = await Provider.of<AddressProvider>(context, listen: false)
+        .getCurrentCityName();
 
-  if (cityName.startsWith("Failed") || cityName.startsWith("Location")) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(cityName),
-      backgroundColor: Colors.red.withOpacity(0.7),
-    ));
-    return;
+    if (cityName.startsWith("Failed") || cityName.startsWith("Location")) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(cityName),
+        backgroundColor: Colors.red.withOpacity(0.7),
+      ));
+      return;
+    }
+
+    final signInViewModel =
+        Provider.of<SignInViewModel>(context, listen: false);
+    signInViewModel.nameController.text = _nameController.text;
+    signInViewModel.locationController.text = cityName;
+
+    var result = await signInViewModel.signUp(context);
+
+    if (result['success']) {
+      Provider.of<UserProvider>(context, listen: false)
+          .login(_nameController.text, result['token']);
+      Navigator.of(context)
+          .pushReplacement(MaterialPageRoute(builder: (_) => HomePage()));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Registration failed. Please try again.'),
+        backgroundColor: Colors.red.withOpacity(0.7),
+      ));
+    }
   }
-
-  final signInViewModel = Provider.of<SignInViewModel>(context, listen: false);
-  signInViewModel.nameController.text = _nameController.text;
-  signInViewModel.locationController.text = _locationController.text;
-
-  var result = await signInViewModel.signUp(context);
-
-  if (result['success']) {
-    Provider.of<UserProvider>(context, listen: false).login(_nameController.text, result['token']);
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => HomePage()));
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Registration failed. Please try again.'),
-      backgroundColor: Colors.red.withOpacity(0.7),
-    ));
-  }
-}
 
   @override
   void dispose() {
     _nameController.dispose();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<SignInViewModel>(context);
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -109,11 +114,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 Transform.translate(
-                  offset: Offset(0, -60),
+                  offset: Offset(0, -55),
                   child: Center(
                     child: Container(
-                      height: 120,
-                      width: 120,
+                      height: 110,
+                      width: 110,
                       decoration: BoxDecoration(
                         image: DecorationImage(
                           image: AssetImage('assets/images/icon.png'),
@@ -126,13 +131,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 //Name Input Card
-                _buildNameInputCard(viewModel),
+                _buildNameInputCard(),
                 //Phone Number Field
                 _buildPhoneNumberField(),
                 //Location Display Card with City Name using FutureBuilder
                 _buildLocationDisplayCard(),
                 //Registration Button
-                _buildRegistrationButton(viewModel),
+                _buildRegistrationButton(),
                 //Sign In Text Navigation
                 _buildSignInText(),
                 SizedBox(
@@ -146,7 +151,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildNameInputCard(SignInViewModel viewModel) {
+  Widget _buildNameInputCard() {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       margin: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
@@ -178,10 +183,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ],
           ),
           ListTile(
-            leading:
-                Icon(Icons.person_outline, color: Color.fromRGBO(75, 0, 95, 1)),
+            leading: Icon(Icons.person_outline, color: Colors.grey[700]),
             title: TextField(
-              controller: viewModel.nameController,
+              controller: _nameController,
+              style: TextStyle(
+                color: Color.fromRGBO(75, 0, 95, 1),
+              ),
               decoration: InputDecoration(
                 hintText: 'الاسم',
                 border: InputBorder.none,
@@ -233,7 +240,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         SizedBox(width: 10),
                         Text(
-                          '+966',       // Country code
+                          '+966', // Country code
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Color.fromRGBO(75, 0, 95, 1),
@@ -298,13 +305,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ],
           ),
           FutureBuilder(
-            future: Provider.of<AddressProvider>(context, listen: true)
+            future: Provider.of<AddressProvider>(context, listen: false)
                 .getCurrentCityName(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return ListTile(
-                  leading: Icon(Icons.person_outline,
-                      color: Color.fromRGBO(75, 0, 95, 1)),
+                  leading: Icon(Icons.person_outline, color: Colors.grey[700]),
                   title: Text(
                     "Fetching city name...",
                     style: TextStyle(
@@ -321,8 +327,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 );
               } else {
                 return ListTile(
-                  leading: Icon(Icons.location_city,
-                      color: Color.fromRGBO(75, 0, 95, 1)),
+                  leading: Icon(Icons.person_outline, color: Colors.grey[700]),
                   title: Text(
                     snapshot.data ?? "City not available",
                     style: TextStyle(
@@ -337,7 +342,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-  Widget _buildRegistrationButton(SignInViewModel viewModel) {
+  Widget _buildRegistrationButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Row(
@@ -386,6 +391,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Widget _buildSignInText() {
     return InkWell(
       onTap: () {
+        Provider.of<SignInViewModel>(context, listen: false)
+            .resetOTPState(); // Reset the state
         Navigator.push(context,
             MaterialPageRoute(builder: (context) => LoginPageScreen()));
       },

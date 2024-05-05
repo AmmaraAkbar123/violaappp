@@ -1,8 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-
 
 class AddressProvider with ChangeNotifier {
   String _currentAddress = 'Fetching address...';
@@ -39,23 +37,17 @@ class AddressProvider with ChangeNotifier {
   }
 
   Future<void> _getAddressFromLatLng(double latitude, double longitude) async {
-  try {
-    List<Placemark> placemarks =
-        await placemarkFromCoordinates(latitude, longitude);
-    if (placemarks.isNotEmpty) {
+    try {
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(latitude, longitude);
       Placemark place = placemarks.first;
-      _currentAddress =
-          "${place.street}, ${place.locality}, ${place.country}";
-    } else {
-      _currentAddress = "No address found";
+      _currentAddress = "${place.street}, ${place.locality}, ${place.country}";
+    } catch (e) {
+      print(e);
+      _currentAddress = "Failed to get address: $e";
     }
-  } catch (e) {
-    print(e);
-    _currentAddress = "Failed to get address: $e";
+    notifyListeners();
   }
-  notifyListeners(); // Ensure listeners are notified after updating the address
-}
-
 
   //for city name
 
@@ -78,16 +70,19 @@ class AddressProvider with ChangeNotifier {
 
       Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high);
-      cityName = await _getCityNameFromLatLng(position.latitude, position.longitude);
+      cityName =
+          await _getCityNameFromLatLng(position.latitude, position.longitude);
     } catch (e) {
       cityName = "Failed to get city name: $e";
     }
     return cityName;
   }
 
-  Future<String> _getCityNameFromLatLng(double latitude, double longitude) async {
+  Future<String> _getCityNameFromLatLng(
+      double latitude, double longitude) async {
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+      List<Placemark> placemarks =
+          await placemarkFromCoordinates(latitude, longitude);
       Placemark place = placemarks.first;
       return place.locality ?? "City not found";
     } catch (e) {
