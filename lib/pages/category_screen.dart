@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:viola/pages/home_page.dart';
 import 'package:viola/providers/category_provider.dart';
 
 class CategoryScreen extends StatefulWidget {
+  const CategoryScreen({Key? key}) : super(key: key);
+
   @override
   _CategoryScreenState createState() => _CategoryScreenState();
 }
@@ -13,78 +14,131 @@ class _CategoryScreenState extends State<CategoryScreen> {
   void initState() {
     super.initState();
     // Fetch categories as soon as the widget is initialized and rendered
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
       Provider.of<CategoryProvider>(context, listen: false).fetchCategories();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final categoryProvider = Provider.of<CategoryProvider>(context);
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Select Categories'),
-          centerTitle: true,
-        ),
-        body: Consumer<CategoryProvider>(
-          builder: (context, catProvider, child) {
-            return Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: catProvider.categories.length,
-                    itemBuilder: (context, index) {
-                      final category = catProvider.categories[index];
-                      return CheckboxListTile(
-                        title: Text(category.name),
-                        value: catProvider.selectedCategories.length > index
-                            ? catProvider.selectedCategories[index]
-                            : false,
-                        onChanged: (bool? value) {
-                          catProvider.toggleCategorySelection(index, value);
-                        },
-                      );
-                    },
-                  ),
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (_, controller) => Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+            ),
+          ),
+          child: Column(
+            children: [
+              SizedBox(height: 8),
+              buildHandleBar(),
+              Text('الخدمت',
+                  style: TextStyle(
+                      color: Colors.purple,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              Expanded(
+                child: ListView.builder(
+                  controller: controller,
+                  itemCount: categoryProvider.categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categoryProvider.categories[index];
+                    return CheckboxListTile(
+                      title: Text(category.name),
+                      value: categoryProvider.selectedCategories[index],
+                      onChanged: (bool? value) {
+                        categoryProvider.toggleCategorySelection(index, value);
+                      },
+                    );
+                  },
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                  builder: (context) => HomePage()),
-                            );
-                          },
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all<Color>(
-                                Color.fromRGBO(75, 0, 95, 1)),
-                            foregroundColor:
-                                MaterialStateProperty.all<Color>(Colors.white),
-                            padding: MaterialStateProperty.all<EdgeInsets>(
-                                EdgeInsets.symmetric(vertical: 15)),
-                            shape: MaterialStateProperty.all<
-                                RoundedRectangleBorder>(
-                              RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8)),
-                            ),
-                          ),
-                          child: Text('يختار',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold, fontSize: 16)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
+              ),
+              buildActionButtons(context, categoryProvider),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget buildHandleBar() {
+    return Center(
+      child: Container(
+        width: 40,
+        height: 4,
+        margin: EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+    );
+  }
+
+  Widget buildActionButtons(BuildContext context, CategoryProvider provider) {
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () async {
+                try {
+                  await provider.fetchSalonsByCategory();
+                  Navigator.of(context).pushReplacementNamed('/home');
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text('Failed to fetch data: ${e.toString()}')),
+                  );
+                }
+              },
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(
+                    Color.fromRGBO(75, 0, 95, 1)),
+                foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+                padding: MaterialStateProperty.all<EdgeInsets>(
+                    EdgeInsets.symmetric(vertical: 15)),
+                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              child: Text('أختر',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ),
+          SizedBox(width: 10),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () {
+                provider.clearSelectedCategories();
+                Navigator.of(context).pop(); // Close the bottom sheet
+              },
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(
+                    Color.fromRGBO(75, 0, 95, 1)),
+                foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
+                padding: MaterialStateProperty.all<EdgeInsets>(
+                    EdgeInsets.symmetric(vertical: 15)),
+                shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                  RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              child: Text('امسح',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
+          ),
+        ],
       ),
     );
   }

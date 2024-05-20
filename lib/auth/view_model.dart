@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:viola/pages/home_page.dart';
-import 'package:viola/pages/signup_page.dart';
 import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:viola/providers/user_provider.dart'; // Secure storage
+import 'package:viola/auth/api_constant.dart';
+import 'package:viola/pages/home_page.dart';
+import 'package:viola/pages/signup_page.dart';
+import 'package:viola/providers/user_provider.dart';
 
 class SignInViewModel extends ChangeNotifier {
   final TextEditingController phoneController = TextEditingController();
@@ -14,8 +15,9 @@ class SignInViewModel extends ChangeNotifier {
   final TextEditingController locationController = TextEditingController();
   bool isOTPRequested = false; // Controls OTP field visibility in UI
   bool? isUserRegistered; // Tracks if user is registered
-  final FlutterSecureStorage _storage = FlutterSecureStorage();
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
+  //Start Verify User Registration with Number
   Future<void> verifyPhoneNumber(BuildContext context) async {
     String? token = await _storage.read(key: 'auth_token');
     if (phoneController.text.isEmpty || phoneController.text.length < 9) {
@@ -24,7 +26,7 @@ class SignInViewModel extends ChangeNotifier {
     }
 
     var response = await http.post(
-      Uri.parse('https://dev.viola.myignite.online/api/verify-phone-no'),
+      Uri.parse(ApiConstants.verifyPhoneNumberUrl),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': token != null ? 'Bearer $token' : '',
@@ -45,10 +47,12 @@ class SignInViewModel extends ChangeNotifier {
       _showServerError(context, response.body);
     }
   }
+  //End Verify User Registration with Number
 
+  //Start Send OTP
   void sendOTP(BuildContext context) async {
     var response = await http.post(
-      Uri.parse('https://dev.viola.myignite.online/api/verify-phone-no'),
+      Uri.parse(ApiConstants.verifyPhoneNumberUrl),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         "phone_number": "+966" + phoneController.text.trim(),
@@ -81,16 +85,17 @@ class SignInViewModel extends ChangeNotifier {
       _showServerError(context, response.body);
     }
   }
+  //End Send OTP
 
+  //Start SignIn User after OTP verification
   void verifyOTP(BuildContext context) async {
     var response = await http.post(
-      Uri.parse('https://dev.viola.myignite.online/api/verify-otp'),
+      Uri.parse(ApiConstants.verifyOtpUrl),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         "phone_number": "+966" + phoneController.text.trim(),
         "otp": otpController.text,
-        "login":
-            true // Assumed this flag asks the backend to attempt logging in the user
+        "login": true // Indicates an attempt to log in the user
       }),
     );
 
@@ -98,47 +103,41 @@ class SignInViewModel extends ChangeNotifier {
       var responseData = jsonDecode(response.body);
 
       if (responseData['success']) {
-        // Check if user details are present which indicates a registered user
         if (responseData['user'] != null) {
+          int userId = responseData['user']['id'];
           String userName = responseData['user']['name'];
           String token = responseData['user']['api_token'];
 
-          // Update UserProvider for a registered user
-          Provider.of<UserProvider>(context, listen: false)
-              .updateUserAfterOTP(userName, token: token);
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => HomePage()));
+          // Ensuring userId is valid
+          if (userId > 0) {
+            // Update UserProvider for a registered user
+            Provider.of<UserProvider>(context, listen: false)
+                .updateUserAfterOTP(userName, userId, token);
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (context) => HomePage()));
+          } else {
+            _showSnackBar(context, 'Invalid user ID received.', Colors.red);
+          }
         } else {
-          // No user details means user is unregistered
+          // Handle unregistered user scenario
           Navigator.pushReplacement(
               context, MaterialPageRoute(builder: (context) => SignUpScreen()));
         }
       } else {
-        // OTP verification itself failed
+        // OTP verification failed
         _showSnackBar(
             context,
             responseData['message'] ?? 'Invalid OTP, please try again.',
             Colors.red);
       }
     } else {
+      // Handle HTTP errors
       _showServerError(context, response.body);
     }
   }
+  //End SignIn User after OTP verification
 
-  Future<void> _saveUserDetails(Map<String, dynamic> userDetails) async {
-    try {
-      await _storage.write(key: 'user_name', value: userDetails['name']);
-      // Store other details as needed
-    } catch (e) {
-      print("Failed to save user details: $e");
-    }
-  }
-
-  void _navigateToHome(BuildContext context) {
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => HomePage()));
-  }
-
+  //Start Show Message
   void _showSnackBar(BuildContext context, String message,
       [Color color = Colors.red]) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -171,24 +170,15 @@ class SignInViewModel extends ChangeNotifier {
       ),
     );
   }
+  //End Show Message
 
+  //Start Show Error Message
   void _showServerError(BuildContext context, String message) {
     _showSnackBar(context, 'Server error: $message');
   }
+  //End Show Error Message
 
-  // Navigation based on registration status
-  void _navigateBasedOnRegistrationStatus(BuildContext context) {
-    // If isUserRegistered is null, default it to false.
-    if (isUserRegistered ?? false) {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => HomePage()));
-    } else {
-      Navigator.pushReplacement(
-          context, MaterialPageRoute(builder: (context) => SignUpScreen()));
-    }
-  }
-
-  // Sign up a new user
+  // Start Sign Up a new user
   Future<Map<String, dynamic>> signUp(BuildContext context) async {
     if (!_areFieldsValid()) {
       _showSnackBar(context, 'Please ensure all fields are filled correctly.');
@@ -199,41 +189,41 @@ class SignInViewModel extends ChangeNotifier {
       "name": nameController.text.trim(),
       "phone_number": "+966" + phoneController.text.trim(),
       "city": locationController.text.trim(),
-      "device_token": "" // Ensure this is supposed to be empty or set a value
+      "device_token":
+          "" // This might be used for push notifications, adjust as needed
     };
 
     var response = await http.post(
-      Uri.parse('https://dev.viola.myignite.online/api/register'),
+      Uri.parse(ApiConstants.registerUrl),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
 
-    print("Received response status: ${response.statusCode}");
-    print("Response body: ${response.body}");
-
     if (response.statusCode == 200) {
       var responseData = jsonDecode(response.body);
 
-      // Check if the message key exists and handle it
-      if (responseData['message'] == "Phone number already exist") {
-        _showSnackBar(context,
-            'Phone number already exists. Please use a different number.');
-        return {'success': false};
-      }
-
-      // Check for a valid success response and a token
-      if (responseData['success'] == true && responseData['data'] != null) {
+      if (responseData['success'] == true &&
+          responseData.containsKey('data') &&
+          responseData['data'] != null) {
         String? token = responseData['data']['api_token'];
         if (token != null && token.isNotEmpty) {
+          int userId = responseData['data']['id']; // Ensure 'id' exists
+          String userName = responseData['data']
+              ['name']; // Assuming 'name' is part of responseData
+
           await _saveToken(token);
-          return {'success': true, 'token': token};
+          // Save user details just like after OTP verification in sign-in
+          await saveUserDetails(context, userName, userId, token);
+          return {'success': true, 'token': token, 'userId': userId};
         } else {
-          _showSnackBar(context, 'Registration failed: No token provided.');
+          _showSnackBar(context, 'Registration failed: No token provided');
           return {'success': false};
         }
       } else {
         _showSnackBar(
-            context, 'Registration failed: Unexpected server response.');
+            context,
+            responseData['message'] ??
+                'Registration failed: Unexpected server response.');
         return {'success': false};
       }
     } else {
@@ -241,31 +231,30 @@ class SignInViewModel extends ChangeNotifier {
       return {'success': false};
     }
   }
+  // End Sign Up a new user
 
-  // Check if the registration data fields are valid
+  // Updated function with context as a parameter
+  Future<void> saveUserDetails(
+      BuildContext context, String userName, int userId, String token) async {
+    // Accessing UserProvider using the provided context
+    Provider.of<UserProvider>(context, listen: false)
+        .updateUserAfterOTP(userName, userId, token);
+
+    // Navigate to HomeScreen or other appropriate screen
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (context) => HomePage()));
+  }
+
+  // Start Check if the registration data fields are valid
   bool _areFieldsValid() {
     return !(nameController.text.isEmpty ||
         phoneController.text.isEmpty ||
         locationController.text.isEmpty ||
         phoneController.text.length < 9);
   }
+  // End Check if the registration data fields are valid
 
-  // Handle registration response and manage token
-  bool _handleRegistrationResponse(
-      BuildContext context, http.Response response) {
-    var responseData = jsonDecode(response.body);
-    if (responseData['success']) {
-      if (responseData.containsKey('token')) {
-        _saveToken(responseData['token']);
-      }
-      return true;
-    } else {
-      _showSnackBar(context, 'Registration failed: ${responseData['message']}');
-      return false;
-    }
-  }
-
-  // Save token securely
+  // Start Save token
   Future<void> _saveToken(String token) async {
     try {
       await _storage.write(key: 'auth_token', value: token);
@@ -273,11 +262,14 @@ class SignInViewModel extends ChangeNotifier {
       print("Failed to save token: $e");
     }
   }
+  // End Save token
 
-  // Reset OTP state and clear controllers
+  // Start Reset OTP state and clear controllers
   void resetOTPState() {
     isOTPRequested = false;
     otpController.clear();
+    phoneController.clear();
     notifyListeners();
   }
+  // End Reset OTP state and clear controllers
 }

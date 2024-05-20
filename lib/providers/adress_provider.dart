@@ -1,81 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:viola/providers/user_provider.dart';
 
 class AddressProvider with ChangeNotifier {
-  String _currentAddress = 'Fetching address...';
+  final String _currentCityName = 'Finding city name...';
 
-  String get currentAddress => _currentAddress;
+  String get currentCityName => _currentCityName;
 
-  Future<void> determineAndSetCurrentAddress() async {
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _currentAddress = 'Location services are disabled.';
-        notifyListeners();
-        return;
-      }
+//start add adresss in adress selection screen
+  int? _selectedOption;
+  List<LocationData> _locations = [];
 
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission != LocationPermission.whileInUse &&
-            permission != LocationPermission.always) {
-          _currentAddress = 'Location permissions are denied.';
-          notifyListeners();
-          return;
-        }
-      }
+  int? get selectedOption => _selectedOption;
+  List<LocationData> get locations => _locations;
 
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      await _getAddressFromLatLng(position.latitude, position.longitude);
-    } catch (e) {
-      _currentAddress = "Failed to get address: $e";
-    }
+  void setSelectedOption(int? option) {
+    _selectedOption = option;
     notifyListeners();
   }
 
-  Future<void> _getAddressFromLatLng(double latitude, double longitude) async {
-    try {
-      List<Placemark> placemarks =
-          await placemarkFromCoordinates(latitude, longitude);
-      Placemark place = placemarks.first;
-      _currentAddress = "${place.street}, ${place.locality}, ${place.country}";
-    } catch (e) {
-      print(e);
-      _currentAddress = "Failed to get address: $e";
-    }
+  Future<void> fetchLocations(UserProvider userProvider) async {
+    await userProvider.loadLocationsFromPrefs();
+    _locations = userProvider.savedLocations;
     notifyListeners();
   }
+// end add adresss in adress selection screen
 
-  //for city name
-
+//start get current city name in signuPpage
   Future<String> getCurrentCityName() async {
-    String cityName = "Fetching city name...";
     try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        return 'Location services are disabled.';
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission != LocationPermission.whileInUse &&
-            permission != LocationPermission.always) {
-          return 'Location permissions are denied.';
-        }
-      }
-
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      cityName =
-          await _getCityNameFromLatLng(position.latitude, position.longitude);
+      Position position = await _determinePosition();
+      return await _getCityNameFromLatLng(
+          position.latitude, position.longitude);
     } catch (e) {
-      cityName = "Failed to get city name: $e";
+      return "Failed to get city name: $e";
     }
-    return cityName;
+  }
+
+  Future<Position> _determinePosition() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception('Location services are disabled.');
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission != LocationPermission.whileInUse &&
+          permission != LocationPermission.always) {
+        throw Exception('Location permissions are denied.');
+      }
+    }
+
+    return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
   }
 
   Future<String> _getCityNameFromLatLng(
@@ -86,8 +65,7 @@ class AddressProvider with ChangeNotifier {
       Placemark place = placemarks.first;
       return place.locality ?? "City not found";
     } catch (e) {
-      print(e);
-      return "Failed to get city name: $e";
+      throw Exception("Failed to get city name: $e");
     }
   }
 }

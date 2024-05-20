@@ -3,13 +3,13 @@ import 'package:provider/provider.dart';
 import 'package:viola/auth/view_model.dart';
 import 'package:viola/pages/login_page.dart';
 import 'package:viola/providers/user_provider.dart';
-import 'package:viola/widgets/radio_drawer.dart';
-
+import 'package:viola/widgets/address_selection_screen.dart';
 
 class NavBar extends StatefulWidget {
   const NavBar({Key? key}) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _NavBarState createState() => _NavBarState();
 }
 
@@ -28,7 +28,8 @@ class _NavBarState extends State<NavBar> {
             _customListTile(
                 title: 'سياسة التطبيق',
                 icon: Icons.policy_outlined,
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => RadioButtonsModel()))),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => LocationsScreen()))),
             _customListTile(
                 title: 'نبزة عن التطبيق',
                 icon: Icons.info_outline,
@@ -54,7 +55,9 @@ class _NavBarState extends State<NavBar> {
       padding: const EdgeInsets.all(10.0),
       color: Color.fromRGBO(239, 224, 243, 1),
       height: 220,
-      child: userProvider.user.isLoggedIn ? loggedInUserView(userProvider) : guestUserView(),
+      child: userProvider.user.isLoggedIn
+          ? loggedInUserView(userProvider)
+          : guestUserView(),
     );
   }
 
@@ -70,7 +73,10 @@ class _NavBarState extends State<NavBar> {
         SizedBox(height: 30),
         Text(
           userProvider.user.name,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color.fromRGBO(75, 0, 95, 1)),
+          style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color.fromRGBO(75, 0, 95, 1)),
         ),
       ],
     );
@@ -83,7 +89,10 @@ class _NavBarState extends State<NavBar> {
       children: [
         Text(
           'أهلا بك',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color.fromRGBO(75, 0, 95, 1)),
+          style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color.fromRGBO(75, 0, 95, 1)),
         ),
         SizedBox(height: 5),
         Text(
@@ -95,10 +104,13 @@ class _NavBarState extends State<NavBar> {
           icon: Icon(Icons.exit_to_app_outlined, color: Colors.white),
           label: Text('الدخول والتسجيل', style: TextStyle(color: Colors.white)),
           onPressed: () {
-            Provider.of<SignInViewModel>(context, listen: false).resetOTPState();
-            Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPageScreen()));
+            Provider.of<SignInViewModel>(context, listen: false)
+                .resetOTPState();
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => LoginPageScreen()));
           },
-          style: ElevatedButton.styleFrom(backgroundColor: Color.fromRGBO(75, 0, 95, 1)),
+          style: ElevatedButton.styleFrom(
+              backgroundColor: Color.fromRGBO(75, 0, 95, 1)),
         ),
       ],
     );
@@ -115,7 +127,7 @@ class _NavBarState extends State<NavBar> {
       duration: Duration(seconds: 2),
     ));
   }
-  
+
   Widget _customListTile(
       {required String title,
       required IconData icon,
@@ -143,5 +155,4 @@ class _NavBarState extends State<NavBar> {
       ),
     );
   }
-
 }

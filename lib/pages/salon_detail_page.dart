@@ -4,13 +4,15 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:viola/json_models/mydata_model.dart';
 import 'package:viola/providers/data_api_provider.dart';
+import 'package:viola/providers/favorite_provider.dart';
 import 'package:viola/widgets/cached_network_image.dart';
 
 class SalonDetailPage extends StatefulWidget {
   final int salonId;
-  SalonDetailPage({required this.salonId});
+  const SalonDetailPage({super.key, required this.salonId});
 
   @override
+  // ignore: library_private_types_in_public_api
   _SalonDetailPageState createState() => _SalonDetailPageState();
 }
 
@@ -25,7 +27,6 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // backgroundColor: Colors.grey,
       body: Directionality(
         textDirection: TextDirection.rtl,
         child: Consumer<MyDataApiProvider>(
@@ -35,7 +36,7 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
             } else if (provider.error != null) {
               return Center(child: Text('Error: ${provider.error}'));
             } else {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             }
           },
         ),
@@ -43,53 +44,68 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
     );
   }
 
- Widget buildSalonDetail(BuildContext context, Datum salon) {
-  return CustomScrollView(
-    slivers: [
-      SliverAppBar(
-        automaticallyImplyLeading: false,
-        floating: true,
-        expandedHeight: MediaQuery.of(context).size.height * 0.3,
-        flexibleSpace: Stack(
-          children: [
-            buildImageCarousel(context, salon.media),
-            Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget buildSalonDetail(BuildContext context, Datum salon) {
+    // Consume the FavoritesProvider to listen to changes
+    return Consumer<FavoritesProvider>(
+      builder: (context, favorites, child) {
+        // Determine if the salon is favorited
+        bool isFavorited = favorites.favorites.contains(salon.id);
+
+        return CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              automaticallyImplyLeading: false,
+              floating: true,
+              expandedHeight: MediaQuery.of(context).size.height * 0.3,
+              flexibleSpace: Stack(
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: Icon(Icons.arrow_back_ios, color: Colors.black),
-                  ),
-                  GestureDetector(
-                    onTap: () {},
-                    child: Icon(Icons.favorite_outline, color: Colors.black),
+                  buildImageCarousel(context, salon.media),
+                  Padding(
+                    padding: const EdgeInsets.all(30.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                          },
+                          child:
+                              Icon(Icons.arrow_back_ios, color: Colors.black),
+                        ),
+                        GestureDetector(
+                          onTap: () async {
+                            await Provider.of<FavoritesProvider>(context,
+                                    listen: false)
+                                .toggleFavorite(context, salon.id);
+                            // Force rebuild by calling setState if inside a StatefulWidget, or using another state management approach
+                          },
+                          child: Icon(
+                            isFavorited
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: isFavorited ? Colors.red : Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
+              bottom: PreferredSize(
+                  preferredSize: Size.fromHeight(300.0),
+                  child: buildMainCard(salon)),
+            ),
+            SliverList(
+              delegate: SliverChildListDelegate(
+                [buildInfoCards(salon)],
+              ),
             ),
           ],
-        ),
-        bottom: PreferredSize(
-          preferredSize: Size.fromHeight(200.0),
-          child: buildMainCard(salon),
-        ),
-      ),
-      // SliverPadding(
-      //   padding: const EdgeInsets.only(top: 70),
-      //   sliver: 
-      // ),
-      SliverList(
-          delegate: SliverChildListDelegate(
-            [buildInfoCards(salon)],
-          ),
-        ),
-    ],
-  );
-}
+        );
+      },
+    );
+  }
+
   Widget buildImageCarousel(BuildContext context, List<Media> mediaList) {
     return CarouselSlider(
       options: CarouselOptions(
@@ -113,7 +129,7 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
     return Card(
       surfaceTintColor: Colors.white,
       elevation: 4,
-      margin: EdgeInsets.symmetric(horizontal: 15),
+      margin: const EdgeInsets.symmetric(horizontal: 15),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
         child: Column(
@@ -125,20 +141,20 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
               children: [
                 Text(
                   salon.name.en,
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Color.fromRGBO(75, 0, 95, 1)),
                 ),
                 Container(
-                  padding: EdgeInsets.fromLTRB(12, 5, 12, 5),
+                  padding: const EdgeInsets.fromLTRB(12, 5, 12, 5),
                   decoration: BoxDecoration(
                       color: isClosed
                           ? Colors.red.withOpacity(0.5)
                           : Colors.green.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(10)),
                   child: Text(openCloseText,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -149,14 +165,15 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("اتصل بنا", style: TextStyle(color: Colors.purple)),
+                const Text("اتصل بنا", style: TextStyle(color: Colors.purple)),
                 Text(
                   "${salon.distance.toStringAsFixed(1)} كم", // Displays the distance with two decimal places
-                  style: TextStyle(color: Colors.blueGrey),
+                  style: const TextStyle(color: Colors.blueGrey),
                 ),
               ],
             ),
-            Text('إزا كان لديك أي سؤال!', style: TextStyle(color: Colors.grey)),
+            const Text('إزا كان لديك أي سؤال!',
+                style: TextStyle(color: Colors.grey)),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,22 +188,23 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
             salon.bookingMethod.isNotEmpty
                 ? Text(
                     'طريقة الحجز: ${salon.bookingMethod}',
-                    style: TextStyle(color: Colors.purple),
+                    style: const TextStyle(color: Colors.purple),
                   )
-                : SizedBox.shrink(),
+                : const SizedBox.shrink(),
           ],
         ),
       ),
     );
   }
 
+  // ignore: non_constant_identifier_names
   Widget IconCard(IconData icon) {
     return Card(
-      color: Color.fromARGB(255, 241, 222, 245),
+      color: const Color.fromARGB(255, 241, 222, 245),
       child: IconButton(
         icon: Icon(
           icon,
-          color: Color.fromRGBO(75, 0, 95, 1),
+          color: const Color.fromRGBO(75, 0, 95, 1),
         ),
         onPressed: () {},
       ),
@@ -202,32 +220,36 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
       child: Column(
         children: [
           salon.dailyNotes.isNotEmpty
-              ? buildInfoCard("الملاحظات اليومية", Divider(), salon.dailyNotes)
-              : SizedBox.shrink(),
+              ? buildInfoCard(
+                  "الملاحظات اليومية", const Divider(), salon.dailyNotes)
+              : const SizedBox.shrink(),
 
           salon.generalNotes.isNotEmpty
-              ? buildInfoCard("الملاحظات العامة", Divider(), salon.generalNotes)
-              : SizedBox.shrink(),
+              ? buildInfoCard(
+                  "الملاحظات العامة", const Divider(), salon.generalNotes)
+              : const SizedBox.shrink(),
 
           salon.promotions.isNotEmpty
-              ? buildInfoCard("العروض", Divider(), salon.promotions)
-              : SizedBox.shrink(),
+              ? buildInfoCard("العروض", const Divider(), salon.promotions)
+              : const SizedBox.shrink(),
 
           salon.tags.isNotEmpty
-              ? buildInfoCard("الشريط الأصفر", Divider(), salon.tags)
-              : SizedBox.shrink(),
+              ? buildInfoCard("الشريط الأصفر", const Divider(), salon.tags)
+              : const SizedBox.shrink(),
 
           salon.addressDesc.isNotEmpty
-              ? buildInfoCard("نبزة عن الصالون", Divider(), salon.addressDesc)
-              : SizedBox.shrink(),
+              ? buildInfoCard(
+                  "نبزة عن الصالون", const Divider(), salon.addressDesc)
+              : const SizedBox.shrink(),
 
           buildScheduleCard(salon.availabilityHours),
 
           salon.serviceDesc.isNotEmpty
-              ? buildServiceCard("الخدمات", Divider(), salon.serviceDesc)
-              : buildServiceCard("الخدمات", Divider(), 'لم يتم العثورعلى خدمة'),
+              ? buildServiceCard("الخدمات", const Divider(), salon.serviceDesc)
+              : buildServiceCard(
+                  "الخدمات", const Divider(), 'لم يتم العثورعلى خدمة'),
 
-          SizedBox(
+          const SizedBox(
             height: 20,
           )
 
@@ -241,7 +263,7 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
     return Card(
       surfaceTintColor: Colors.white,
       elevation: 4,
-      margin: EdgeInsets.fromLTRB(15, 15, 15, 0),
+      margin: const EdgeInsets.fromLTRB(15, 15, 15, 0),
       child: ListTile(
         title: Text(title,
             style: TextStyle(
@@ -252,7 +274,7 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
             divider,
             Text(
               content,
-              style: TextStyle(color: Colors.grey),
+              style: const TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -261,23 +283,90 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
   }
 
   Widget buildServiceCard(String title, Widget divider, String content) {
-    return Card(
-      surfaceTintColor: Colors.white,
-      elevation: 4,
-      margin: EdgeInsets.fromLTRB(15, 15, 15, 0),
-      child: ListTile(
-        title: Text(title,
-            style: TextStyle(
-                fontWeight: FontWeight.bold, color: Colors.purple[700])),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            divider,
-            Text(
-              content,
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
+    return GestureDetector(
+      onTap: () {
+        showModalBottomSheet(
+          context: context,
+          builder: (BuildContext context) {
+            return Container(
+              width: double.infinity,
+              height: 300,
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Asset image
+                  Expanded(
+                    child: Image.asset(
+                      'assets/images/service.jpg',
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                    ),
+                  ),
+                  const SizedBox(height: 10), // Spacer
+                  // Texts
+                  const Text(
+                    'تفاصيل الخدمة',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.purple,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const Text(
+                    "عرض الخدمة",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.purple,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10), // Spacer
+                  // Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(
+                            const Color.fromARGB(255, 120, 2, 141)),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text(
+                        'عرض',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+      child: Card(
+        surfaceTintColor: Colors.white,
+        elevation: 4,
+        margin: const EdgeInsets.fromLTRB(15, 15, 15, 0),
+        child: ListTile(
+          title: Text(title,
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, color: Colors.purple[700])),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              divider,
+              Text(
+                content,
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -328,7 +417,7 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
                   color: Colors.purple[700],
                 )),
             Container(
-              padding: EdgeInsets.fromLTRB(18, 5, 18, 5),
+              padding: const EdgeInsets.fromLTRB(18, 5, 18, 5),
               decoration: BoxDecoration(
                   color: Colors.grey[300],
                   borderRadius: BorderRadius.circular(10)),
@@ -344,7 +433,7 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
           return Padding(
             padding: const EdgeInsets.only(top: 2.0, bottom: 2.0),
             child: Container(
-                padding: EdgeInsets.fromLTRB(18, 5, 18, 5),
+                padding: const EdgeInsets.fromLTRB(18, 5, 18, 5),
                 decoration: BoxDecoration(
                     color: Colors.grey[300],
                     borderRadius: BorderRadius.circular(10)),
@@ -375,14 +464,15 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
 
       dayWidgets.add(dayWidget);
       if (day != allDays.last) {
-        dayWidgets.add(Divider());
+        dayWidgets.add(const Divider());
       }
     });
+    // Add the bottom sheet widget
 
     return Card(
       elevation: 4,
       surfaceTintColor: Colors.white,
-      margin: EdgeInsets.fromLTRB(15, 15, 15, 0),
+      margin: const EdgeInsets.fromLTRB(15, 15, 15, 0),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -394,7 +484,7 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
                   fontSize: 18,
                   color: Colors.purple[700],
                 )),
-            Divider(),
+            const Divider(),
             ...dayWidgets,
           ],
         ),

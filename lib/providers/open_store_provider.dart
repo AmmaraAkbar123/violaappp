@@ -7,55 +7,44 @@ class OpenStoreProvider extends ChangeNotifier {
   List<Datum> openStores = [];
   int currentPage = 1;
   bool hasMore = true;
-  bool isPaginating = false;
   bool isLoading = false;
   String? error;
 
   final DataApiService _dataApiService = DataApiService();
 
-  Future<void> fetchOpenStores({bool loadMore = false}) async {
-    // Check if there are more pages to load
-    if (!loadMore && !hasMore) {
-      return;
-    }
-
-    // Prevent simultaneous paginations
-    if (loadMore && isPaginating) {
-      return;
-    }
-
+  Future<void> fetchAllOpenStores() async {
     isLoading = true;
-    if (!loadMore) {
-      // Reset pagination state for a new fetch
-      currentPage = 1;
-      openStores.clear();
-      error = null;
-    }
-    isPaginating = true;
+    error = null; // Reset any previous errors
+    currentPage = 1;
+    openStores.clear();
     notifyListeners();
 
+    do {
+      log('Fetching page: $currentPage');
+      await _fetchOpenStores();
+      log('Fetched page: $currentPage, hasMore: $hasMore, openStores count: ${openStores.length}');
+      notifyListeners(); // Ensure listeners are notified after each fetch
+    } while (hasMore && error == null);
+
+    isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> _fetchOpenStores() async {
     try {
-      // Fetch data for the current page
-      Mydata newPageData = await _dataApiService.fetchData(page: currentPage);
+      Mydata newPageData = await _dataApiService.fetchData(
+          page: currentPage, longitude: '74.2665947', latitude: '31.4734661');
+      List<Datum> fetchedStores =
+          newPageData.data.data.where((store) => !store.closed).toList();
+      openStores.addAll(fetchedStores);
 
-      // Add fetched stores to the list
-      openStores.addAll(newPageData.data.data.where((store) => !store.closed));
-
-      // Update pagination status
-      hasMore = newPageData.data.currentPage < newPageData.data.lastPage;
-      currentPage++;
-
-      // If there are more pages and it's a loadMore request, fetch the next page
-      if (loadMore && hasMore) {
-        await fetchOpenStores(loadMore: true);
-      }
+      currentPage = newPageData.data.currentPage;
+      hasMore = currentPage < newPageData.data.lastPage;
+      if (hasMore) currentPage++;
     } catch (e) {
       error = e.toString();
       log('Error fetching open stores: $error');
-    } finally {
-      isLoading = false;
-      isPaginating = false;
-      notifyListeners();
+      hasMore = false;
     }
   }
 }

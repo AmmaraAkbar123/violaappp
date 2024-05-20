@@ -10,9 +10,11 @@ class Mydata {
   });
 
   factory Mydata.fromJson(Map<String, dynamic> json) => Mydata(
-        success: json["success"],
-        data: Data.fromJson(json["data"]),
-        message: json["message"],
+        success: json["success"] ?? false,
+        data: json["data"] != null
+            ? Data.fromJson(json["data"])
+            : throw Exception('Data is null'),
+        message: json["message"] ?? "",
       );
 
   Map<String, dynamic> toJson() => {
@@ -25,48 +27,45 @@ class Mydata {
 class Data {
   int currentPage;
   List<Datum> data;
-  String firstPageUrl;
+  String? firstPageUrl; // Made nullable
   int from;
   int lastPage;
-  String lastPageUrl;
-  String nextPageUrl;
+  String? lastPageUrl; // Made nullable
+  String? nextPageUrl; // Made nullable
   String path;
   String perPage;
-  dynamic prevPageUrl;
+  String? prevPageUrl; // Made nullable
   int to;
   int total;
 
   Data({
     required this.currentPage,
     required this.data,
-    required this.firstPageUrl,
+    this.firstPageUrl, // Nullable
     required this.from,
     required this.lastPage,
-    required this.lastPageUrl,
-    required this.nextPageUrl,
+    this.lastPageUrl, // Nullable
+    this.nextPageUrl, // Nullable
     required this.path,
     required this.perPage,
-    required this.prevPageUrl,
+    this.prevPageUrl, // Nullable
     required this.to,
     required this.total,
   });
 
   factory Data.fromJson(Map<String, dynamic> json) => Data(
-        currentPage: json["current_page"] as int? ?? 0,
-        data: (json["data"] as List<dynamic>?)
-                ?.map((x) => Datum.fromJson(x as Map<String, dynamic>))
-                .toList() ??
-            [],
-        firstPageUrl: json["first_page_url"] as String? ?? '',
-        from: json["from"] as int? ?? 0,
-        lastPage: json["last_page"] as int? ?? 0,
-        lastPageUrl: json["last_page_url"] as String? ?? '',
-        nextPageUrl: json["next_page_url"] as String? ?? '',
-        path: json["path"] as String? ?? '',
-        perPage: json["per_page"] as String? ?? '',
-        prevPageUrl: json["prev_page_url"] as String?,
-        to: json["to"] as int? ?? 0,
-        total: json["total"] as int? ?? 0,
+        currentPage: json['current_page'] as int,
+        data: List<Datum>.from(json['data'].map((x) => Datum.fromJson(x))),
+        firstPageUrl: json['first_page_url'] as String?, // Handling nullable
+        from: json['from'] as int,
+        lastPage: json['last_page'] as int,
+        lastPageUrl: json['last_page_url'] as String?,
+        nextPageUrl: json['next_page_url'] as String?,
+        path: json['path'] as String,
+        perPage: json['per_page'] as String,
+        prevPageUrl: json['prev_page_url'] as String?,
+        to: json['to'] as int,
+        total: json['total'] as int,
       );
 
   Map<String, dynamic> toJson() => {
@@ -112,7 +111,6 @@ class Datum {
   List<Media> media;
   List<AvailabilityHour> availabilityHours;
   String bookingMethod;
-
   String generalNotes;
   String dailyNotes;
   String promotions;
@@ -155,47 +153,45 @@ class Datum {
 
   factory Datum.fromJson(Map<String, dynamic> json) {
     return Datum(
-      distance: (json["distance"] as num?)?.toDouble() ?? 0.0,
-      area: (json["area"] as num?)?.toDouble() ?? 0.0,
-      id: json["id"] as int? ?? 0,
-      name: Description.fromJson(
-          json["name"] as Map<String, dynamic>? ?? {'en': 'No name'}),
-      salonLevelId: json["salon_level_id"] as int? ?? 0,
-      addressId: json["address_id"] as int? ?? 0,
-      description: Description.fromJson(
-          json["description"] as Map<String, dynamic>? ??
-              {'en': 'No description'}),
-      phoneNumber: json["phone_number"] as String? ?? '',
-      mobileNumber: json["mobile_number"] as String? ?? '',
-      availabilityRange: json["availability_range"] as int? ?? 0,
-      available: json["available"] as bool? ?? false,
-      featured: json["featured"] as bool? ?? false,
-      accepted: json["accepted"] as bool? ?? false,
-      serviceDesc: json["service_desc"] as String? ?? '',
-      addressDesc: json["address_desc"] as String? ?? '',
-      homeDesc: json["home_desc"] as String? ?? '',
-      descriptionLength: json["description_length"] as String? ?? '',
-      showOnHomePage: json["show_on_home_page"] as int? ?? 0,
-      tags: json["tags"] as String? ?? '',
-      hasMedia: json["has_media"] as bool? ?? false,
-      rate: json["rate"] as int? ?? 0,
-      closed: json["closed"] as bool? ?? false,
-      totalReviews: json["total_reviews"] as int? ?? 0,
-      media: (json["media"] as List<dynamic>?)
-              ?.map((x) => Media.fromJson(x as Map<String, dynamic>))
-              .toList() ??
-          [],
-      availabilityHours: (json["availability_hours"] as List<dynamic>?)
-              ?.map((x) => AvailabilityHour.fromJson(x as Map<String, dynamic>))
-              .toList() ??
-          [],
-      bookingMethod: json["booking_method"] as String? ?? '',
-      generalNotes: json["general_notes"] as String? ?? '',
-      dailyNotes: json["daily_notes"] as String? ?? '',
-      promotions: json["promotions"] as String? ?? '',
-      dailyNotesLength: json["daily_notes_length"] as String? ?? '',
-      generalNotesLength: json["general_notes_length"] as String? ?? '',
-    );
+        distance: (json["distance"] as num?)?.toDouble() ?? 0.0,
+        area: (json["area"] as num?)?.toDouble() ?? 0.0,
+        id: (json["id"] as num?)?.toInt() ?? 0,
+        name: Description.fromJson(json["name"] as Map<String, dynamic>?),
+        salonLevelId: (json["salon_level_id"] as num?)?.toInt() ?? 0,
+        addressId: (json["address_id"] as num?)?.toInt() ?? 0,
+        description:
+            Description.fromJson(json["description"] as Map<String, dynamic>?),
+        phoneNumber: json["phone_number"] as String? ?? '',
+        mobileNumber: json["mobile_number"] as String? ?? '',
+        availabilityRange: (json["availability_range"] as num?)?.toInt() ?? 0,
+        available: json["available"] as bool? ?? false,
+        featured: json["featured"] as bool? ?? false,
+        accepted: json["accepted"] as bool? ?? false,
+        serviceDesc: json["service_desc"] as String? ?? '',
+        addressDesc: json["address_desc"] as String? ?? '',
+        homeDesc: json["home_desc"] as String? ?? '',
+        descriptionLength: json["description_length"] as String? ?? '',
+        showOnHomePage: (json["show_on_home_page"] as num?)?.toInt() ?? 0,
+        tags: json["tags"] as String? ?? '',
+        hasMedia: json["has_media"] as bool? ?? false,
+        rate: (json["rate"] as num?)?.toInt() ?? 0,
+        closed: json["closed"] as bool? ?? false,
+        totalReviews: (json["total_reviews"] as num?)?.toInt() ?? 0,
+        media: (json["media"] as List<dynamic>?)
+                ?.map((x) => Media.fromJson(x as Map<String, dynamic>))
+                .toList() ??
+            [],
+        availabilityHours: (json["availability_hours"] as List<dynamic>?)
+                ?.map(
+                    (x) => AvailabilityHour.fromJson(x as Map<String, dynamic>))
+                .toList() ??
+            [],
+        bookingMethod: json["booking_method"] as String? ?? '',
+        generalNotes: json["general_notes"] as String? ?? '',
+        dailyNotes: json["daily_notes"] as String? ?? '',
+        promotions: json["promotions"] as String? ?? '',
+        dailyNotesLength: json["daily_notes_length"] as String? ?? '',
+        generalNotesLength: json["general_notes_length"] as String? ?? '');
   }
 
   Map<String, dynamic> toJson() => {
@@ -251,21 +247,30 @@ class AvailabilityHour {
     required this.endAt,
     required this.data,
     required this.salonId,
-    required this.deletedAt,
+    this.deletedAt,
     required this.customFields,
   });
 
-  factory AvailabilityHour.fromJson(Map<String, dynamic> json) =>
-      AvailabilityHour(
-        id: json["id"],
-        day: json["day"],
-        startAt: json["start_at"],
-        endAt: json["end_at"],
-        data: Description.fromJson(json["data"]),
-        salonId: json["salon_id"],
-        deletedAt: json["deleted_at"],
-        customFields: List<dynamic>.from(json["custom_fields"].map((x) => x)),
-      );
+  factory AvailabilityHour.fromJson(Map<String, dynamic> json) {
+    return AvailabilityHour(
+      id: (json["id"] as num?)?.toInt() ??
+          0, // Ensuring id is safely converted to int
+      day: json["day"] as String? ?? '', // Default to empty string if null
+      startAt:
+          json["start_at"] as String? ?? '', // Default to empty string if null
+      endAt: json["end_at"] as String? ?? '', // Default to empty string if null
+      data: json["data"] != null
+          ? Description.fromJson(json["data"] as Map<String, dynamic>)
+          : Description(en: 'N/A'), // Handling null for nested Description
+      salonId:
+          (json["salon_id"] as num?)?.toInt() ?? 0, // Safely converting to int
+      deletedAt: json[
+          "deleted_at"], // Directly assigning dynamic, no conversion needed
+      customFields: json["custom_fields"] != null
+          ? List<dynamic>.from(json["custom_fields"].map((x) => x))
+          : [], // Handling potentially null list
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         "id": id,
@@ -284,13 +289,18 @@ class Description {
 
   Description({required this.en});
 
-  factory Description.fromJson(Map<String, dynamic> json) {
-    return Description(en: json['en'] as String? ?? "Default Description");
+  factory Description.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return Description(en: 'N/A');
+    }
+    return Description(en: json['en'] as String? ?? 'N/A');
   }
 
-  Map<String, dynamic> toJson() => {
-        'en': en,
-      };
+  Map<String, dynamic> toJson() {
+    return {
+      'en': en,
+    };
+  }
 }
 
 class Media {
@@ -314,16 +324,23 @@ class Media {
     required this.formatedSize,
   });
 
-  factory Media.fromJson(Map<String, dynamic> json) => Media(
-        id: json["id"],
-        name: json["name"],
-        customProperties: CustomProperties.fromJson(json["custom_properties"]),
-        cover: json["cover"],
-        url: json["url"],
-        thumb: json["thumb"],
-        icon: json["icon"],
-        formatedSize: json["formated_size"],
-      );
+  factory Media.fromJson(Map<String, dynamic> json) {
+    return Media(
+      id: (json["id"] as num?)?.toInt() ?? 0, // Ensures safe int conversion
+      name: json["name"] as String? ?? '', // Defaults to empty string if null
+      customProperties: json["custom_properties"] != null
+          ? CustomProperties.fromJson(
+              json["custom_properties"] as Map<String, dynamic>)
+          : CustomProperties
+              .defaultProperties(), // Handle null with a default instance
+      cover: json["cover"] as String? ?? '', // Defaults to empty string if null
+      url: json["url"] as String? ?? '', // Defaults to empty string if null
+      thumb: json["thumb"] as String? ?? '', // Defaults to empty string if null
+      icon: json["icon"] as String? ?? '', // Defaults to empty string if null
+      formatedSize: json["formated_size"] as String? ??
+          '', // Defaults to empty string if null
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         "id": id,
@@ -348,14 +365,28 @@ class CustomProperties {
     required this.generatedConversions,
   });
 
+  // Factory constructor for creating an instance from JSON
   factory CustomProperties.fromJson(Map<String, dynamic> json) =>
       CustomProperties(
-        uuid: json["uuid"],
-        userId: json["user_id"],
-        generatedConversions:
-            GeneratedConversions.fromJson(json["generated_conversions"]),
+        uuid: json["uuid"] as String? ?? 'default-uuid', // Default UUID if null
+        userId: (json["user_id"] as num?)?.toInt() ??
+            0, // Safe cast to int, default to 0 if null
+        generatedConversions: json["generated_conversions"] != null
+            ? GeneratedConversions.fromJson(
+                json["generated_conversions"] as Map<String, dynamic>)
+            : GeneratedConversions.defaultConversions(), // Use default if null
       );
 
+  // Method to create a default instance of CustomProperties
+  static CustomProperties defaultProperties() {
+    return CustomProperties(
+      uuid: 'default-uuid',
+      userId: 0,
+      generatedConversions: GeneratedConversions.defaultConversions(),
+    );
+  }
+
+  // Method to convert to JSON format
   Map<String, dynamic> toJson() => {
         "uuid": uuid,
         "user_id": userId,
@@ -372,12 +403,22 @@ class GeneratedConversions {
     required this.icon,
   });
 
+  // Factory constructor for parsing from JSON
   factory GeneratedConversions.fromJson(Map<String, dynamic> json) =>
       GeneratedConversions(
-        thumb: json["thumb"],
-        icon: json["icon"],
+        thumb: json["thumb"] as bool? ?? false, // Default to false if null
+        icon: json["icon"] as bool? ?? false, // Default to false if null
       );
 
+  // Method to create a default instance of GeneratedConversions
+  static GeneratedConversions defaultConversions() {
+    return GeneratedConversions(
+      thumb: false,
+      icon: false,
+    );
+  }
+
+  // Method to convert to JSON format
   Map<String, dynamic> toJson() => {
         "thumb": thumb,
         "icon": icon,

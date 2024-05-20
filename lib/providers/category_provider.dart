@@ -1,17 +1,83 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:viola/json_models/category_model.dart';
+import 'package:viola/auth/api_constant.dart';
+import 'package:viola/json_models/category_model.dart' as viola;
+import 'package:viola/json_models/mydata_model.dart';
 
 class CategoryProvider extends ChangeNotifier {
-  List<Category> _categories = [];
-  List<bool> _selectedCategories = [];
+  List<viola.Category> categories = [];
+  List<bool> _selectedCategories = []; // List to store selection state
+  List<Datum> filteredSalons = []; // List to hold filtered salons
+  bool isLoading = false; // Track loading status
+  String? error; // To hold any error message
 
-  List<Category> get categories => _categories;
-  List<bool> get selectedCategories => _selectedCategories;
+  List<bool> get selectedCategories =>
+      _selectedCategories; // Getter for selectedCategories
 
-  CategoryProvider() {
-    loadCategories();
+  // Getter to retrieve selected category IDs
+  List<int> get selectedCategoryIds => categories
+      .asMap()
+      .entries
+      .where((entry) => _selectedCategories[entry.key])
+      .map((entry) => entry.value.id)
+      .toList();
+
+  bool get hasSelectedCategories => selectedCategoryIds.isNotEmpty;
+  Future<void> fetchCategories() async {
+    isLoading = true;
+    notifyListeners();
+    try {
+      final response = await http.get(Uri.parse(ApiConstants.categoriesUrl));
+      final jsonData = json.decode(response.body);
+
+      if (jsonData is List) {
+        categories = jsonData
+            .map((categoryJson) => viola.Category.fromJson(categoryJson))
+            .toList();
+      } else if (jsonData is Map<String, dynamic>) {
+        // Assuming the category data is stored under a key named 'data'
+        final categoryData = jsonData['data'];
+
+        if (categoryData is List) {
+          categories = categoryData
+              .map((categoryJson) => viola.Category.fromJson(categoryJson))
+              .toList();
+        } else {
+          throw Exception(
+              'Invalid category data format: Expected a List, received ${categoryData.runtimeType}.');
+        }
+      } else {
+        throw Exception(
+            'Invalid data format: Expected a List or Map, received ${jsonData.runtimeType}.');
+      }
+
+      // Initialize selected categories state only if it's empty
+      if (_selectedCategories.isEmpty) {
+        _selectedCategories = List<bool>.filled(categories.length, false);
+      }
+    } catch (e) {
+      error = 'Error fetching categories: ${e.toString()}';
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Fetch salons based on selected category IDs
+  Future<void> fetchSalonsByCategory() async {
+    if (selectedCategoryIds.isEmpty) {
+      throw Exception("Please select at least one category to filter by.");
+    }
+    try {
+      // Use SalonFilterService to fetch filtered salons
+      final salonFilterService = SalonFilterService();
+      filteredSalons = await salonFilterService.fetchFilteredSalons(
+          categoryIds: selectedCategoryIds);
+      notifyListeners(); // Notify listeners about the update
+    } catch (e) {
+      throw Exception('Error fetching filtered salons: $e');
+    }
   }
 
   void toggleCategorySelection(int index, bool? isSelected) {
@@ -21,75 +87,69 @@ class CategoryProvider extends ChangeNotifier {
     }
   }
 
-  final String _baseUrl = 'http://dev.viola.myignite.online/api/categories';
-
-  Future<void> loadCategories() async {
-    var categories = await fetchCategories();
-    _categories = categories;
+  void clearSelectedCategories() {
     _selectedCategories = List<bool>.filled(categories.length, false);
-    notifyListeners(); // Notify listeners to update the UI after data is fetched and state is updated
+    filteredSalons.clear(); // Clear the list of filtered salons
+    notifyListeners();
   }
 
-  Future<List<Category>> fetchCategories() async {
-    Uri uri = Uri.parse('$_baseUrl?parent=true&orderBy=order&sortBy=asc');
-
+  // Method to fetch salons based on selected categories
+  Future<List<Datum>> fetchFilteredSalons() async {
+    if (selectedCategoryIds.isEmpty) {
+      throw Exception("No categories selected.");
+    }
     try {
-      final response = await http.get(uri, headers: {
-        'Content-Type': 'application/json',
-      }).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        var responseJson = jsonDecode(response.body);
-        if (responseJson['success']) {
-          List<dynamic> categoryJsonList = responseJson['data'];
-          return categoryJsonList
-              .map((json) => Category.fromJson(json))
-              .toList();
-        } else {
-          throw Exception('Failed to find categories in the response');
-        }
-      } else {
-        throw Exception(
-            'Failed to load categories: Status code ${response.statusCode}');
-      }
+      isLoading = true;
+      notifyListeners();
+      // Use SalonFilterService to fetch filtered salons
+      final salonFilterService = SalonFilterService();
+      return await salonFilterService.fetchFilteredSalons(
+        categoryIds: selectedCategoryIds,
+      );
     } catch (e) {
-      throw Exception('Failed to load categories: ${e.toString()}');
+      error = 'Error fetching filtered salons: ${e.toString()}';
+      rethrow; // Rethrow to handle in UI
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
   }
 }
 
+class SalonFilterService {
+  Future<List<Datum>> fetchFilteredSalons({
+    required List<int> categoryIds,
+  }) async {
+    Uri filterUri = Uri.parse(ApiConstants.filterSalonsByCategoriesUrl);
+    var body = json.encode({
+      'categories_ids': categoryIds.map((id) => id.toString()).toList(),
+    });
 
+    var headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
 
+    var response = await http.post(filterUri, headers: headers, body: body);
+    print("Filter URL being hit: $filterUri with body $body");
 
-// import 'package:flutter/foundation.dart';
-// import 'package:viola/json_models/category_model.dart';
+    return _handlePostRequest<List<Datum>>(response);
+  }
 
-// class CategoryProvider extends ChangeNotifier {
-//   List<voila.Category> categories = [];
-//   List<bool> _selectedCategories =
-//       []; // Define the list to store selection state
+  List<Datum> _handlePostRequest<T>(http.Response response) {
+    print('API Response Body: ${response.body}');
+    if (response.statusCode != 200) {
+      throw Exception(
+          'Failed to load data with status code: ${response.statusCode}');
+    }
 
-//   List<bool> get selectedCategories =>
-//       _selectedCategories; // Getter for selectedCategories
-
-//   final CategoryApiService _categoryApiService = CategoryApiService();
-
-//   Future<void> fetchCategories() async {
-//     try {
-//       categories = await _categoryApiService.fetchCategories();
-//       // Initialize or update selected categories list to match the fetched categories
-//       _selectedCategories = List<bool>.filled(categories.length, false);
-//       notifyListeners();
-//     } catch (e) {
-//       // Handle exceptions by showing a message or logging errors
-//       print('Error fetching categories: $e');
-//     }
-//   }
-
-//   void toggleCategorySelection(int index, bool? isSelected) {
-//     if (isSelected != null && index < _selectedCategories.length) {
-//       _selectedCategories[index] = isSelected;
-//       notifyListeners();
-//     }
-//   }
-// }
+    var jsonData = json.decode(response.body);
+    if (T == List<Datum>) {
+      List<dynamic> dataList = jsonData['data'];
+      return dataList.map((datumJson) => Datum.fromJson(datumJson)).toList()
+          as List<Datum>;
+    } else {
+      throw Exception("Unexpected generic type $T");
+    }
+  }
+}

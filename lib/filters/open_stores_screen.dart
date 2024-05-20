@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:viola/json_models/mydata_model.dart';
+import 'package:viola/pages/salon_detail_page.dart';
 import 'package:viola/providers/open_store_provider.dart';
 import 'package:viola/widgets/main_containers.dart';
 
 class OpenStoresScreen extends StatefulWidget {
-  final List<Datum> openStores;
-
-  const OpenStoresScreen({super.key, required this.openStores});
   @override
   _OpenStoresScreenState createState() => _OpenStoresScreenState();
 }
@@ -18,24 +15,23 @@ class _OpenStoresScreenState extends State<OpenStoresScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch initial page of open stores
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
-      final provider = context.read<OpenStoreProvider>();
-      if (provider.openStores.isEmpty) {
-        provider.fetchOpenStores();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      var provider = Provider.of<OpenStoreProvider>(context, listen: false);
+      // Fetch stores if not already loaded or if an error occurred previously
+      if (provider.openStores.isEmpty && provider.error == null) {
+        provider.fetchAllOpenStores();
       }
     });
     _scrollController.addListener(_onScroll);
   }
 
   void _onScroll() {
-    final provider = context.read<OpenStoreProvider>();
-    // Check if reached the end of the list and there are more stores to load
-    if (_scrollController.position.pixels ==
-            _scrollController.position.maxScrollExtent &&
-        !provider.isLoading &&
-        provider.hasMore) {
-      provider.fetchOpenStores(loadMore: true); // Fetch more stores
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 100 &&
+        !Provider.of<OpenStoreProvider>(context, listen: false).isLoading &&
+        Provider.of<OpenStoreProvider>(context, listen: false).hasMore) {
+      Provider.of<OpenStoreProvider>(context, listen: false)
+          .fetchAllOpenStores();
     }
   }
 
@@ -50,16 +46,29 @@ class _OpenStoresScreenState extends State<OpenStoresScreen> {
               title: Text('المتاجر المفتوحة'),
               centerTitle: true,
             ),
-            body: provider.isLoading && provider.openStores.isEmpty
+            body: provider.isLoading
                 ? Center(child: CircularProgressIndicator())
                 : provider.openStores.isEmpty
-                    ? Center(child: Text("No open stores available."))
+                    ? Center(
+                        child:
+                            Text(provider.error ?? "No open stores available."))
                     : ListView.builder(
                         controller: _scrollController,
                         itemCount: provider.openStores.length,
                         itemBuilder: (context, index) {
-                          return MainContainers(
-                              data: provider.openStores[index]);
+                          final salon = provider.openStores[index];
+                          return InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => SalonDetailPage(
+                                            salonId: salon.id,
+                                          )));
+                            },
+                            child: MainContainers(
+                                data: provider.openStores[index]),
+                          );
                         },
                       ),
           ),

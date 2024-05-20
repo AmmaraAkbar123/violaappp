@@ -1,94 +1,150 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:debounce_throttle/debounce_throttle.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:viola/auth/api_constant.dart';
+import 'package:viola/json_models/mydata_model.dart';
+import 'package:viola/providers/user_provider.dart';
 
 class MapProvider extends ChangeNotifier {
-  late GoogleMapController mapController;
+  GoogleMapController? mapController; // Updated to nullable type
   final TextEditingController searchController = TextEditingController();
-  String currentAddress = 'Fetching address...';
+  String currentAddress = 'Finding address...';
   Set<Marker> markers = {};
-  LatLng lastMapPosition = LatLng(31.473427, 74.266420); // Default coordinates
+  LatLng lastMapPosition = const LatLng(31.473427, 74.266420);
   List<String> suggestions = [];
   bool showSuggestions = false;
+  bool showCard = true;
+  Mydata? homepageData;
   String apiKey =
       'AIzaSyAL4OhK2DnU0XMcj0VZgwfc4DKRKLdOdv0'; // Store this securely
-  bool showCard = true;
+  bool _isPositionFetched = false;
 
-  // Initialize default position
-  final CameraPosition defaultPosition = CameraPosition(
+  LatLng get currentLatLng => lastMapPosition;
+
+  // Method to update the camera position based on an address
+  Future<void> navigateToAddress(LatLng latLng) async {
+    await updateCameraPosition(latLng.latitude, latLng.longitude);
+    await updateAddressAndMarker(latLng.latitude, latLng.longitude);
+  }
+
+  // to save location in address selection screen
+  void saveCurrentLocation(UserProvider userProvider, {bool forceSave = true}) {
+    if (forceSave) {
+      userProvider.addLocation(currentAddress, lastMapPosition);
+    }
+  }
+
+  // Debouncer for search input to limit API calls
+  final debounce =
+      Debouncer<String>(const Duration(milliseconds: 500), initialValue: '');
+
+  final CameraPosition defaultPosition = const CameraPosition(
     target: LatLng(31.473427, 74.266420),
     zoom: 14,
   );
 
-  void onMapCreated(GoogleMapController controller) {
-    mapController = controller;
-    determineCurrentPosition();
+  MapProvider() {
+    // Set up the debounce callback
+    debounce.values.listen((query) {
+      fetchSuggestions(query, apiKey).then((newSuggestions) {
+        suggestions = newSuggestions;
+        showSuggestions = true;
+        notifyListeners();
+      }).catchError((e) {
+        print("Error fetching suggestions: $e");
+      });
+    });
   }
 
-  // Start Determine Current Position
+  void onMapCreated(GoogleMapController controller) {
+    mapController = controller;
+    determineCurrentPosition(); // Ensure this is called after mapController is initialized
+  }
+
+  void resetPositionFetched() {
+    _isPositionFetched = false;
+  }
+
   Future<void> determineCurrentPosition() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      currentAddress = 'Location services are disabled.';
-      notifyListeners();
+    if (_isPositionFetched) {
+      // Position already fetched, no need to fetch again
       return;
     }
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        currentAddress = 'Location permissions are denied';
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        currentAddress = 'Location services are disabled.';
         notifyListeners();
         return;
       }
-    }
 
-    if (permission == LocationPermission.deniedForever) {
-      currentAddress =
-          'Location permissions are permanently denied, we cannot request permissions.';
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        // Location permission denied, request it again
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          // Location permission denied again, navigate to app settings
+          openLocationSettings();
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        currentAddress =
+            'Location permissions are permanently denied, we cannot request permissions.';
+        notifyListeners();
+        return;
+      }
+
+      // Map is ready, fetch current position
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      await updateCameraPosition(position.latitude, position.longitude);
+      await updateAddressAndMarker(position.latitude, position.longitude);
+      _isPositionFetched = true; // Update flag
+    } catch (e) {
+      print('Error fetching location: $e');
+      currentAddress = 'Error fetching location: $e';
       notifyListeners();
-      return;
     }
-
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
-    updateCameraPosition(position.latitude, position.longitude);
-    updateAddressAndMarker(position.latitude, position.longitude);
   }
-  // End Determine Current Position
 
-  // Start Update Address and Marker
-  void updateAddressAndMarker(double latitude, double longitude) async {
+// on deny redirect the user to setting for permission
+  void openLocationSettings() {
+    openAppSettings().then((_) {
+      print('Opened app settings');
+    }).catchError((error) {
+      print('Error opening app settings: $error');
+    });
+  }
+
+  Future<void> updateAddressAndMarker(double latitude, double longitude) async {
     LatLng newPosition = LatLng(latitude, longitude);
+    lastMapPosition = newPosition;
+
     try {
       String address = await getAddressFromLatLng(latitude, longitude);
       currentAddress = address;
+      markers = {
+        Marker(
+          markerId: const MarkerId('current_location'),
+          position: newPosition,
+          infoWindow: InfoWindow(title: 'Current Location', snippet: address),
+        ),
+      };
     } catch (e) {
       currentAddress = "Failed to get address: ${e.toString()}";
     }
-    updateMarkers(newPosition);
-  }
-  // End Update Address and Marker
 
-  //Start Update Marker
-  void updateMarkers(LatLng newPosition, [String? infoTitle]) {
-    markers.clear();
-    markers.add(
-      Marker(
-        markerId: MarkerId("currentLocation"),
-        position: newPosition,
-        infoWindow: InfoWindow(title: infoTitle ?? currentAddress),
-      ),
-    );
     notifyListeners();
   }
-  //End Update Marker
 
-  //Start Get Address from Coordinates
   Future<String> getAddressFromLatLng(double latitude, double longitude) async {
     try {
       List<Placemark> placemarks =
@@ -103,70 +159,53 @@ class MapProvider extends ChangeNotifier {
       return "Failed to get address: ${e.toString()}";
     }
   }
-  //End Get Address from Coordinates
 
-  //Start Remove Card when Camera Move
   void onCameraMoveStarted() {
     showCard = false;
     notifyListeners();
   }
-  //End Remove Card when Camera Move
 
-  //Start When Camera is not Moving
   void onCameraIdle() {
-    showCard = true;
     updateAddressAndMarker(lastMapPosition.latitude, lastMapPosition.longitude);
+    showCard = true;
+    notifyListeners();
   }
-  //End When Camera is not Moving
 
-  //Start When Camera is on Move
   void onCameraMove(CameraPosition position) {
     lastMapPosition = position.target;
-    updateMarkers(lastMapPosition);
+    notifyListeners();
   }
-  //End When Camera is on Move
 
-  //Start Update Camera Position
-  void updateCameraPosition(double latitude, double longitude) {
+  Future<void> updateCameraPosition(double latitude, double longitude) async {
     LatLng newPosition = LatLng(latitude, longitude);
-    mapController.animateCamera(CameraUpdate.newLatLng(newPosition));
-    lastMapPosition = newPosition;
-    updateMarkers(newPosition, "Updating location...");
-  }
-  //End Update Camera Position
-
-  //Start Set Marker on Tap
-  void handleTap(LatLng tappedPoint) async {
-    updateCameraPosition(tappedPoint.latitude, tappedPoint.longitude);
-    updateAddressAndMarker(tappedPoint.latitude, tappedPoint.longitude);
-  }
-  //End Set Marker on Tap
-
-  // Start Get Address from Coordinates
-  Future<String> _getAddressFromLatLng(
-      double latitude, double longitude) async {
-    try {
-      List<Placemark> placemarks =
-          await placemarkFromCoordinates(latitude, longitude);
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks.first;
-        String street = place.street ?? 'Street unknown';
-        String locality = place.locality ?? 'City unknown';
-        String country = place.country ?? 'Country unknown';
-        return "$street, $locality, $country";
-      } else {
-        return "No address found";
-      }
-    } catch (e) {
-      return "Failed to get address: ${e.toString()}";
+    if (newPosition != lastMapPosition) {
+      lastMapPosition = newPosition;
+      notifyListeners();
+    }
+    if (mapController != null) {
+      mapController!.animateCamera(CameraUpdate.newLatLng(newPosition));
     }
   }
-  // End Get Address from Coordinates
 
-  // Start Get Place Details
+  void handleTap(LatLng tappedPoint) async {
+    await updateCameraPosition(tappedPoint.latitude, tappedPoint.longitude);
+    await updateAddressAndMarker(tappedPoint.latitude, tappedPoint.longitude);
+    lastMapPosition = tappedPoint;
+    notifyListeners();
+  }
+
+  void onLocationSelected(
+      LatLng selectedLocation, Function updateLocationCallback) {
+    lastMapPosition = selectedLocation;
+    updateLocationCallback(
+        selectedLocation); // Pass the selectedLocation to the callback
+    // Do not update the current address here
+    notifyListeners();
+  }
+
   Future<LatLng> fetchPlaceDetails(String placeId, String apiKey) async {
     final String url =
-        'https://maps.googleapis.com/maps/api/place/details/json?placeid=$placeId&key=$apiKey';
+        '${ApiConstants.googlePlaceDetailsUrl}?placeid=$placeId&key=$apiKey';
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -177,22 +216,19 @@ class MapProvider extends ChangeNotifier {
         }
         throw Exception(result['error_message']);
       } else {
-        throw Exception('Failed to fetch place details');
+        throw Exception('Failed to find place details');
       }
     } catch (e) {
-      throw Exception('Failed to fetch place details: $e');
+      throw Exception('Failed to find place details: $e');
     }
   }
-  // End Get Place Details
 
-  // Start Suggestions
   Future<List<String>> fetchSuggestions(String input, String apiKey) async {
-    final String baseURL =
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json';
-    String request = '$baseURL?input=$input&key=$apiKey';
+    final String url =
+        '${ApiConstants.googlePlaceAutocompleteUrl}?input=$input&key=$apiKey';
 
     try {
-      final response = await http.get(Uri.parse(request));
+      final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
         if (result['status'] == 'OK') {
@@ -211,34 +247,15 @@ class MapProvider extends ChangeNotifier {
       throw Exception('Failed to fetch suggestions: $e');
     }
   }
-  // End Suggestions
 
-  //Start Changes made on Search Suggestions
-  Future<void> onSearchChanged(String query) async {
-    if (query.isNotEmpty) {
-      suggestions = await fetchSuggestions(query, apiKey);
-      showSuggestions = true;
-    } else {
-      suggestions = [];
-      showSuggestions = false;
-    }
-    notifyListeners();
+  void onSearchChanged(String query) {
+    debounce.setValue(query);
   }
-  //End Changes made on Search Suggestions
 
-  // Start Search and Navigation
   void searchAndNavigate(String query) {
     if (query.isNotEmpty) {
       fetchPlaceDetails(query, apiKey).then((latLng) {
         updateCameraPosition(latLng.latitude, latLng.longitude);
-        markers.clear();
-        markers.add(
-          Marker(
-            markerId: MarkerId('searchedLocation'),
-            position: latLng,
-            infoWindow: InfoWindow(title: query),
-          ),
-        );
         getAddressFromLatLng(latLng.latitude, latLng.longitude).then((address) {
           currentAddress = address;
           notifyListeners();
@@ -252,14 +269,11 @@ class MapProvider extends ChangeNotifier {
       });
     }
   }
-  // End Search and Navigation
 
-  //Start Selection of Suggestion
   void selectSuggestion(String suggestion) {
     searchController.text = suggestion;
     showSuggestions = false;
     searchAndNavigate(suggestion);
     notifyListeners();
   }
-  //End Selection of Suggestion
 }

@@ -3,13 +3,12 @@ import 'package:viola/json_models/feature_model.dart';
 
 class HorizontalCard extends StatelessWidget {
   final FeatureDatum data;
-  const HorizontalCard({super.key,required this.data});
+  const HorizontalCard({super.key, required this.data});
 
   @override
   Widget build(BuildContext context) {
-    
     final double width = MediaQuery.of(context).size.width * 0.6;
-     return Card(
+    return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
@@ -17,40 +16,40 @@ class HorizontalCard extends StatelessWidget {
         width: width,
         child: Column(
           children: [
-           
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                  child:  Image.network(
-                    data.media.isNotEmpty ? data.media.first.url :
-      
-                    'https://tse4.mm.bing.net/th?id=OIP.P964u_TuURYpxhlzDpVBIwHaEo&pid=Api&P=0&h=180',
-                    
-                    height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context,error,stackTrace)=>
-                    Image.network("https://tse4.mm.bing.net/th?id=OIP.P964u_TuURYpxhlzDpVBIwHaEo&pid=Api&P=0&h=180",
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
+                  child: Image.network(
+                      data.media.isNotEmpty
+                          ? data.media.first.url
+                          : 'https://tse4.mm.bing.net/th?id=OIP.P964u_TuURYpxhlzDpVBIwHaEo&pid=Api&P=0&h=180',
                       height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                      )
-                  ),
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Image.network(
+                            "https://tse4.mm.bing.net/th?id=OIP.P964u_TuURYpxhlzDpVBIwHaEo&pid=Api&P=0&h=180",
+                            height: 160,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          )),
                 ),
                 Positioned(
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: data.closed? Colors.red.withOpacity(0.4):Colors.green.withOpacity(0.4),
+                      color: data.closed
+                          ? Colors.red.withOpacity(0.4)
+                          : Colors.green.withOpacity(0.4),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                     data.closed?
-                     "Closed":"Open",
-                  
+                      data.closed ? "Closed" : "Open",
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -60,7 +59,6 @@ class HorizontalCard extends StatelessWidget {
                 ),
               ],
             ),
-           
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
@@ -74,7 +72,7 @@ class HorizontalCard extends StatelessWidget {
                     children: [
                       SizedBox(height: 4),
                       Text(
-                         data.name.en,
+                        data.name.en,
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -96,11 +94,9 @@ class HorizontalCard extends StatelessWidget {
                 ),
               ],
             ),
-           
           ],
         ),
       ),
     );
-   
   }
 }

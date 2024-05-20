@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:viola/auth/api_constant.dart';
 import 'package:viola/json_models/category_model.dart';
 
 class CategoryApiService {
-  final String _baseUrl = 'http://dev.viola.myignite.online/api/categories';
-
   Future<List<Category>> fetchCategories() async {
-    Uri uri = Uri.parse('$_baseUrl?parent=true&orderBy=order&sortBy=asc');
+    Uri uri = Uri.parse(
+        '${ApiConstants.categoriesUrl}?parent=true&orderBy=order&sortBy=asc');
 
     try {
       final response = await http.get(uri, headers: {

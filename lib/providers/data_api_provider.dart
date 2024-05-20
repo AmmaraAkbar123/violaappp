@@ -5,23 +5,24 @@ import 'package:viola/services/api_services/api_mydata_service.dart';
 
 class MyDataApiProvider extends ChangeNotifier {
   Mydata? mydata;
-  int currentPage = 1;  // Track the current page
-  bool isLoading = false;  // Flag to check if data is being loaded
-  bool hasMore = true; 
-  bool isPaginating = false; // Flag to check if there are more pages available
+  int currentPage = 1;
+  bool hasMore = true;
+  bool isPaginating = false;
   String? error;
   Datum? salonDetails;
   final DataApiService _dataApiService = DataApiService();
 
-  // Fetch data with optional pagination
+  // Default longitude and latitude values
+  String longitude = '74.2665947'; // Default or dynamic value
+  String latitude = '31.4734661'; // Default or dynamic value
   Future<void> fetchData({bool fetchNextPage = false}) async {
-    if (fetchNextPage && !hasMore) {
-      return; // If there are no more pages, do not attempt to fetch more
-    }
-
-      if (fetchNextPage) {
+    if (fetchNextPage) {
+      if (!hasMore) {
+        log('No more data to fetch.');
+        return;
+      }
       if (isPaginating) {
-        // Prevent multiple simultaneous pagination requests
+        log('Currently paginating, request to fetch next page ignored.');
         return;
       }
       currentPage++; // Increment page number to fetch next page
@@ -30,40 +31,54 @@ class MyDataApiProvider extends ChangeNotifier {
       currentPage = 1; // Reset to first page for a fresh fetch
     }
 
-    notifyListeners();
+    notifyListeners(); // Notify listeners before fetching data
 
     try {
-      Mydata newPageData = await _dataApiService.fetchData(page: currentPage);
+      // Now includes longitude and latitude
+      Mydata newPageData = await _dataApiService.fetchData(
+          page: currentPage, longitude: longitude, latitude: latitude);
       if (fetchNextPage && mydata != null) {
-        // If fetching next page, append new data
+        // Append new data if paginating and homepageData is not null
         mydata!.data.data.addAll(newPageData.data.data);
       } else {
-        // If not fetching next page, replace existing data
+        // Set new data if not paginating or if homepageData was initially null
         mydata = newPageData;
       }
-        // Update hasMore based on current and last page comparison
+      // Update 'hasMore' to determine if more data can be fetched
       hasMore = newPageData.data.currentPage < newPageData.data.lastPage;
+      notifyListeners(); // Notify listeners after successful data fetch
     } catch (e) {
       error = e.toString();
       log('Error while fetching data: $error');
+      notifyListeners(); // Ensure UI updates to show the error state
     } finally {
-      isPaginating = false; // Reset paginating flag
-      notifyListeners(); // Notify listeners to update UI
+      isPaginating = false; // Always reset the paginating flag
     }
   }
 
-  // Fetch details of a specific salon
   Future<void> fetchSalonDetails(int salonId) async {
     error = null;
-    salonDetails = null;  // Clear previous details
+    salonDetails = null;
     notifyListeners();
 
     try {
-      salonDetails = await _dataApiService.fetchSalonDetails(salonId);
-      notifyListeners();
+      Datum? details = await _dataApiService.fetchSalonDetails(salonId);
+      // Use direct assignment as null check is unnecessary with nullable types
+      salonDetails = details;
+      notifyListeners(); // Notify listeners after successfully fetching data
     } catch (e) {
       error = e.toString();
-      notifyListeners();
+      log("Error fetching salon details: $error"); // Log the error
+      notifyListeners(); // Notify listeners in case of error to show error message
+    }
+  }
+
+  //for dynamic latlngs
+  void updateLocation(String newLongitude, String newLatitude) {
+    if (longitude != newLongitude || latitude != newLatitude) {
+      longitude = newLongitude;
+      latitude = newLatitude;
+      fetchData(); // Fetch data with the new coordinates
     }
   }
 }

@@ -17,6 +17,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _nameController = TextEditingController();
 
   void _registerUser() async {
+    FocusScope.of(context).unfocus(); // Close the keyboard
+    await Future.delayed(const Duration(
+        seconds: 2)); // Wait a bit for the keyboard to fully close
+
     String cityName = await Provider.of<AddressProvider>(context, listen: false)
         .getCurrentCityName();
 
@@ -33,16 +37,32 @@ class _SignUpScreenState extends State<SignUpScreen> {
     signInViewModel.nameController.text = _nameController.text;
     signInViewModel.locationController.text = cityName;
 
-    var result = await signInViewModel.signUp(context);
+    // Show the loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+
+    var result = await Future.delayed(
+        const Duration(seconds: 3), () => signInViewModel.signUp(context));
+
+    // Close the loading dialog
+    Navigator.of(context).pop();
 
     if (result['success']) {
+      int userId = result['userId']; // Assuming the user ID is returned here
       Provider.of<UserProvider>(context, listen: false)
-          .login(_nameController.text, result['token']);
+          .login(_nameController.text, userId, result['token']);
       Navigator.of(context)
-          .pushReplacement(MaterialPageRoute(builder: (_) => HomePage()));
+          .pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Registration failed. Please try again.'),
+        content: const Text('Registration failed. Please try again.'),
         backgroundColor: Colors.red.withOpacity(0.7),
       ));
     }
@@ -60,8 +80,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(75, 0, 95, 1),
-        title: Text(
+        backgroundColor: const Color.fromRGBO(75, 0, 95, 1),
+        title: const Text(
           'انشاء حساب جديد',
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -70,7 +90,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons.arrow_forward,
               color: Colors.white,
             ),
@@ -79,9 +99,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ],
       ),
       body: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
+        // onTap: () {
+        //   FocusScope.of(context).unfocus();
+        //   Future.delayed(Duration(milliseconds: 100));
+        // },
         child: Directionality(
           textDirection: TextDirection.rtl,
           child: SingleChildScrollView(
@@ -89,20 +110,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
               children: [
                 Container(
                   height: screenHeight * 0.2,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Color.fromRGBO(75, 0, 95, 1),
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(15),
                       bottomRight: Radius.circular(15),
                     ),
                   ),
-                  child: Center(
+                  child: const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         SizedBox(height: 20),
                         Text(
-                          'Voila',
+                          'Viola',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -114,13 +135,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 Transform.translate(
-                  offset: Offset(0, -55),
+                  offset: const Offset(0, -55),
                   child: Center(
                     child: Container(
                       height: 110,
                       width: 110,
                       decoration: BoxDecoration(
-                        image: DecorationImage(
+                        image: const DecorationImage(
                           image: AssetImage('assets/images/icon.png'),
                           fit: BoxFit.cover,
                         ),
@@ -140,7 +161,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 _buildRegistrationButton(),
                 //Sign In Text Navigation
                 _buildSignInText(),
-                SizedBox(
+                const SizedBox(
                   height: 20,
                 )
               ],
@@ -153,8 +174,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Widget _buildNameInputCard() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -162,7 +183,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Text(
                 'الاسم',
@@ -186,10 +207,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
             leading: Icon(Icons.person_outline, color: Colors.grey[700]),
             title: TextField(
               controller: _nameController,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Color.fromRGBO(75, 0, 95, 1),
               ),
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'الاسم',
                 border: InputBorder.none,
               ),
@@ -204,7 +225,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final viewModel = Provider.of<SignInViewModel>(context, listen: false);
 
     return Container(
-      margin: EdgeInsets.fromLTRB(20, 5, 20, 5),
+      margin: const EdgeInsets.fromLTRB(20, 5, 20, 5),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -218,7 +239,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'رقم الهاتف',
                   style: TextStyle(
                     fontSize: 12,
@@ -226,11 +247,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     color: Color.fromRGBO(75, 0, 95, 1),
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Directionality(
                   textDirection: TextDirection.ltr,
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
                     child: Row(
                       children: [
                         Image.asset(
@@ -238,15 +260,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           width: 40,
                           height: 40,
                         ),
-                        SizedBox(width: 10),
-                        Text(
+                        const SizedBox(width: 10),
+                        const Text(
                           '+966', // Country code
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Color.fromRGBO(75, 0, 95, 1),
                           ),
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Builder(
                           builder: (BuildContext context) {
                             print(viewModel.phoneController
@@ -254,7 +276,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             return Text(
                               viewModel.phoneController
                                   .text, // Display the phone number
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Color.fromRGBO(75, 0, 95, 1),
                                 fontSize: 16,
                               ),
@@ -275,8 +297,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Widget _buildLocationDisplayCard() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -284,7 +306,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Text(
                 'المدينة',
@@ -308,10 +330,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
             future: Provider.of<AddressProvider>(context, listen: false)
                 .getCurrentCityName(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              if (snapshot.connectionState == ConnectionState.active) {
                 return ListTile(
                   leading: Icon(Icons.person_outline, color: Colors.grey[700]),
-                  title: Text(
+                  title: const Text(
                     "Fetching city name...",
                     style: TextStyle(
                         fontSize: 12, color: Color.fromRGBO(75, 0, 95, 1)),
@@ -319,10 +341,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 );
               } else if (snapshot.hasError) {
                 return ListTile(
-                  leading: Icon(Icons.error_outline, color: Colors.red),
+                  leading: const Icon(Icons.error_outline, color: Colors.red),
                   title: Text(
                     "Error: ${snapshot.error}",
-                    style: TextStyle(fontSize: 12, color: Colors.red),
+                    style: const TextStyle(fontSize: 12, color: Colors.red),
                   ),
                 );
               } else {
@@ -330,7 +352,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   leading: Icon(Icons.person_outline, color: Colors.grey[700]),
                   title: Text(
                     snapshot.data ?? "City not available",
-                    style: TextStyle(
+                    style: const TextStyle(
                         fontSize: 12, color: Color.fromRGBO(75, 0, 95, 1)),
                   ),
                 );
@@ -353,10 +375,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Color.fromRGBO(75, 0, 95, 1).withOpacity(0.3),
+                    color: const Color.fromRGBO(75, 0, 95, 1).withOpacity(0.3),
                     spreadRadius: 3,
                     blurRadius: 10,
-                    offset: Offset(0, 0),
+                    offset: const Offset(0, 0),
                   ),
                 ],
               ),
@@ -364,19 +386,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 onPressed: _registerUser,
                 style: ButtonStyle(
                   backgroundColor: MaterialStateProperty.all<Color>(
-                    Color.fromRGBO(75, 0, 95, 1),
+                    const Color.fromRGBO(75, 0, 95, 1),
                   ),
                   foregroundColor:
                       MaterialStateProperty.all<Color>(Colors.white),
                   padding: MaterialStateProperty.all<EdgeInsets>(
-                      EdgeInsets.symmetric(vertical: 14)),
+                      const EdgeInsets.symmetric(vertical: 14)),
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
-                child: Text(
+                child: const Text(
                   'سجل',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
@@ -394,9 +416,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         Provider.of<SignInViewModel>(context, listen: false)
             .resetOTPState(); // Reset the state
         Navigator.push(context,
-            MaterialPageRoute(builder: (context) => LoginPageScreen()));
+            MaterialPageRoute(builder: (context) => const LoginPageScreen()));
       },
-      child: Text(
+      child: const Text(
         'اذا كان لديك حساب، اضغط هنا',
         style: TextStyle(
           color: Color.fromRGBO(75, 0, 95, 1),

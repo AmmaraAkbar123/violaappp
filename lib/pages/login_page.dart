@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:viola/auth/view_model.dart';
 
 class LoginPageScreen extends StatelessWidget {
-  LoginPageScreen({Key? key}) : super(key: key);
+  const LoginPageScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,8 +13,8 @@ class LoginPageScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color.fromRGBO(75, 0, 95, 1),
-        title: Text(
+        backgroundColor: const Color.fromRGBO(75, 0, 95, 1),
+        title: const Text(
           "Welcome",
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -23,7 +23,7 @@ class LoginPageScreen extends StatelessWidget {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons.arrow_forward,
               color: Colors.white,
             ),
@@ -42,20 +42,20 @@ class LoginPageScreen extends StatelessWidget {
               children: [
                 Container(
                   height: screenHeight * 0.2,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Color.fromRGBO(75, 0, 95, 1),
                     borderRadius: BorderRadius.only(
                       bottomLeft: Radius.circular(15),
                       bottomRight: Radius.circular(15),
                     ),
                   ),
-                  child: Center(
+                  child: const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         SizedBox(height: 20),
                         Text(
-                          'Voila',
+                          'Viola',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -67,13 +67,13 @@ class LoginPageScreen extends StatelessWidget {
                   ),
                 ),
                 Transform.translate(
-                  offset: Offset(0, -60),
+                  offset: const Offset(0, -60),
                   child: Center(
                     child: Container(
                       height: 120,
                       width: 120,
                       decoration: BoxDecoration(
-                        image: DecorationImage(
+                        image: const DecorationImage(
                           image: AssetImage('assets/images/icon.png'),
                           fit: BoxFit.cover,
                         ),
@@ -98,7 +98,7 @@ class LoginPageScreen extends StatelessWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
+                                    const Text(
                                       'OTP',
                                       style: TextStyle(
                                         fontSize: 12,
@@ -106,11 +106,11 @@ class LoginPageScreen extends StatelessWidget {
                                         color: Color.fromRGBO(75, 0, 95, 1),
                                       ),
                                     ),
-                                    SizedBox(height: 10),
+                                    const SizedBox(height: 10),
                                     Directionality(
                                       textDirection: TextDirection.ltr,
                                       child: Container(
-                                        padding: EdgeInsets.symmetric(
+                                        padding: const EdgeInsets.symmetric(
                                             horizontal: 10, vertical: 0),
                                         child: Row(
                                           children: [
@@ -120,7 +120,8 @@ class LoginPageScreen extends StatelessWidget {
                                                     viewModel.otpController,
                                                 keyboardType:
                                                     TextInputType.phone,
-                                                decoration: InputDecoration(
+                                                decoration:
+                                                    const InputDecoration(
                                                   hintText: '- - - -',
                                                   border: InputBorder.none,
                                                   counterText: "",
@@ -148,9 +149,9 @@ class LoginPageScreen extends StatelessWidget {
                     :
                     //Phone Number Field
                     Container(
-                        margin: EdgeInsets.fromLTRB(20, 5, 20, 5),
+                        margin: const EdgeInsets.fromLTRB(20, 5, 20, 5),
                         decoration: BoxDecoration(
-                          color: Color.fromARGB(255, 234, 234, 234),
+                          color: const Color.fromARGB(255, 234, 234, 234),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         width: MediaQuery.of(context).size.width,
@@ -162,7 +163,7 @@ class LoginPageScreen extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  const Text(
                                     'رقم الهاتف',
                                     style: TextStyle(
                                       fontSize: 12,
@@ -170,11 +171,11 @@ class LoginPageScreen extends StatelessWidget {
                                       color: Color.fromRGBO(75, 0, 95, 1),
                                     ),
                                   ),
-                                  SizedBox(height: 10),
+                                  const SizedBox(height: 10),
                                   Directionality(
                                     textDirection: TextDirection.ltr,
                                     child: Container(
-                                      padding: EdgeInsets.symmetric(
+                                      padding: const EdgeInsets.symmetric(
                                           horizontal: 10, vertical: 0),
                                       child: Row(
                                         children: [
@@ -183,8 +184,8 @@ class LoginPageScreen extends StatelessWidget {
                                             width: 40,
                                             height: 40,
                                           ),
-                                          SizedBox(width: 10),
-                                          Text(
+                                          const SizedBox(width: 10),
+                                          const Text(
                                             '+966',
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
@@ -192,7 +193,7 @@ class LoginPageScreen extends StatelessWidget {
                                                   Color.fromRGBO(75, 0, 95, 1),
                                             ),
                                           ),
-                                          SizedBox(
+                                          const SizedBox(
                                             width: 5,
                                           ),
                                           Expanded(
@@ -200,7 +201,7 @@ class LoginPageScreen extends StatelessWidget {
                                               controller:
                                                   viewModel.phoneController,
                                               keyboardType: TextInputType.phone,
-                                              decoration: InputDecoration(
+                                              decoration: const InputDecoration(
                                                   hintText: '5xxxxxxx',
                                                   border: InputBorder.none,
                                                   counterText: ""),
@@ -218,7 +219,7 @@ class LoginPageScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                SizedBox(
+                const SizedBox(
                   height: 40,
                 ),
                 //Registration Button
@@ -231,7 +232,8 @@ class LoginPageScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       boxShadow: [
                         BoxShadow(
-                          color: Color.fromRGBO(75, 0, 95, 1).withOpacity(0.3),
+                          color: const Color.fromRGBO(75, 0, 95, 1)
+                              .withOpacity(0.3),
                           spreadRadius: 3,
                           blurRadius: 10,
                         ),
@@ -250,11 +252,11 @@ class LoginPageScreen extends StatelessWidget {
                       },
                       style: ButtonStyle(
                         backgroundColor: MaterialStateProperty.all<Color>(
-                            Color.fromRGBO(75, 0, 95, 1)),
+                            const Color.fromRGBO(75, 0, 95, 1)),
                         foregroundColor:
                             MaterialStateProperty.all<Color>(Colors.white),
                         padding: MaterialStateProperty.all<EdgeInsets>(
-                            EdgeInsets.symmetric(vertical: 14)),
+                            const EdgeInsets.symmetric(vertical: 14)),
                         shape:
                             MaterialStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
@@ -263,7 +265,7 @@ class LoginPageScreen extends StatelessWidget {
                       ),
                       child: Text(
                         viewModel.isOTPRequested ? 'تحقق من الرمز' : 'الدخول',
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -280,16 +282,16 @@ class LoginPageScreen extends StatelessWidget {
   Widget _header(double screenHeight) {
     return Container(
       height: screenHeight * 0.2,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Color.fromRGBO(75, 0, 95, 1),
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(15),
           bottomRight: Radius.circular(15),
         ),
       ),
       child: const Center(
         child: Text(
-          'Voila',
+          'Viola',
           style: TextStyle(
               color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
         ),

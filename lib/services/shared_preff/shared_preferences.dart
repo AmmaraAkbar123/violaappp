@@ -2,22 +2,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class PreferencesService {
   Future<void> save(String key, String value) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, value);
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, value);
+    } catch (e) {
+      print("Error saving to SharedPreferences: $e");
+      throw Exception('Failed to save preferences');
+    }
   }
 
   Future<String?> load(String key) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getString(key);
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      return prefs.getString(key);
+    } catch (e) {
+      print("Error loading from SharedPreferences: $e");
+      return null;
+    }
   }
 
   Future<void> remove(String key) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove(key);
-  }
-
-  void saveToken(String token) async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('auth_token', token);
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.remove(key);
+    } catch (e) {
+      print("Error removing from SharedPreferences: $e");
+      throw Exception('Failed to remove preference');
+    }
   }
 }

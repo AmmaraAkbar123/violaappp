@@ -17,27 +17,29 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   _navigateToHome() async {
-    await Future.delayed(Duration(seconds: 3), () {});
+    await Future.delayed(const Duration(seconds: 3), () {});
     Navigator.pushReplacement(
+      // ignore: use_build_context_synchronously
       context,
-      MaterialPageRoute(builder: (context) => HomePage()),
+      MaterialPageRoute(builder: (context) => const HomePage()),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: myTheme.primaryColor,
-      body: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      // crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Center(
-            child: Text(
-              "Welcome to Viola",style: TextStyle(color: Colors.white,fontSize: 30,fontWeight: FontWeight.bold),
+        backgroundColor: myTheme.primaryColor,
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Center(
+              child: Image.asset(
+                'assets/images/violasplash.png',
+                width: 250,
+                height: 250,
+              ),
             ),
-          )
-        ],
-      )
-    );
+          ],
+        ));
   }
 }
