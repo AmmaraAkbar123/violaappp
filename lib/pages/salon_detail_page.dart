@@ -171,8 +171,9 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
                   onTap: () {
                     if (Platform.isIOS) {
                       SnackBar(
+                        backgroundColor: Colors.red,
                         content: Text('Google Maps is not available on iOS.'),
-                        duration: Duration(seconds: 1),
+                        duration: Duration(seconds: 2),
                       );
                     } else {
                       Navigator.of(context).pop();
@@ -187,9 +188,10 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
                     title: Text('Apple Maps'),
                     onTap: () {
                       SnackBar(
+                        backgroundColor: Colors.red,
                         content:
                             Text('Apple Maps is not available on Android.'),
-                        duration: Duration(seconds: 1),
+                        duration: Duration(seconds: 2),
                       );
                     },
                   ),
@@ -200,14 +202,6 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
         },
       );
     }
-
-    // void launchURL(String url) async {
-    //   if (await canLaunch(url)) {
-    //     await launch(url);
-    //   } else {
-    //     throw 'Could not launch $url';
-    //   }
-    // }
 
     return Card(
       surfaceTintColor: Colors.white,

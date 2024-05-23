@@ -417,7 +417,7 @@ class _HomePageState extends State<HomePage> {
                                   isScrollControlled: true,
                                   backgroundColor: Colors.transparent,
                                   builder: (BuildContext context) {
-                                    return const CategoryScreen();
+                                    return CategoryScreen();
                                   },
                                 );
                               } else {
@@ -427,9 +427,7 @@ class _HomePageState extends State<HomePage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) =>
-                                        const LoginPageScreen(),
-                                  ),
+                                      builder: (context) => LoginPageScreen()),
                                 );
                               }
                             },

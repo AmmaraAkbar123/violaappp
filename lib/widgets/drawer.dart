@@ -4,6 +4,8 @@ import 'package:viola/auth/view_model.dart';
 import 'package:viola/pages/login_page.dart';
 import 'package:viola/providers/user_provider.dart';
 import 'package:viola/widgets/address_selection_screen.dart';
+import 'package:viola/widgets/connectWithUs.dart';
+import 'package:viola/widgets/drawer_policy.dart';
 
 class NavBar extends StatefulWidget {
   const NavBar({Key? key}) : super(key: key);
@@ -33,11 +35,18 @@ class _NavBarState extends State<NavBar> {
             _customListTile(
                 title: 'نبزة عن التطبيق',
                 icon: Icons.info_outline,
-                onTap: () => _showNotImplementedMessage()),
+                onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ApplicationPolicy()),
+                    )),
             _customListTile(
                 title: 'تواصل معنا',
                 icon: Icons.contact_phone_outlined,
-                onTap: () => _showNotImplementedMessage()),
+                onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ConnectWithUs()),
+                    )),
             if (userProvider.user.isLoggedIn)
               _customListTile(
                 title: 'تسجيل الخروج',

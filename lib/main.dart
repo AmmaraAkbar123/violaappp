@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:viola/auth/view_model.dart';
-import 'package:viola/pages/category_screen.dart';
 import 'package:viola/pages/home_page.dart';
 import 'package:viola/providers/adress_provider.dart';
 import 'package:viola/pages/splashscreen.dart';
@@ -86,7 +85,6 @@ class MyApp extends StatelessWidget {
         home: const SplashScreen(),
         routes: {
           "/home": (context) => const HomePage(),
-          "/category": (context) => const CategoryScreen()
         },
         // initialRoute: "/home",
       ),

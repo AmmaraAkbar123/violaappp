@@ -99,10 +99,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ],
       ),
       body: GestureDetector(
-        // onTap: () {
-        //   FocusScope.of(context).unfocus();
-        //   Future.delayed(Duration(milliseconds: 100));
-        // },
+        onTap: () {
+          FocusScope.of(context).unfocus();
+          Future.delayed(Duration(milliseconds: 100));
+        },
         child: Directionality(
           textDirection: TextDirection.rtl,
           child: SingleChildScrollView(

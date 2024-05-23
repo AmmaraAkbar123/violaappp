@@ -32,7 +32,7 @@ class SignInViewModel extends ChangeNotifier {
         'Authorization': token != null ? 'Bearer $token' : '',
       },
       body: jsonEncode({
-        "phone_number": "+966" + phoneController.text.trim(),
+        "phone_number": "+966${phoneController.text.trim()}",
         "send_otp": false // Initially just checking the registration status
       }),
     );
@@ -93,7 +93,7 @@ class SignInViewModel extends ChangeNotifier {
       Uri.parse(ApiConstants.verifyOtpUrl),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        "phone_number": "+966" + phoneController.text.trim(),
+        "phone_number": "+966${phoneController.text.trim()}",
         "otp": otpController.text,
         "login": true // Indicates an attempt to log in the user
       }),
@@ -113,15 +113,15 @@ class SignInViewModel extends ChangeNotifier {
             // Update UserProvider for a registered user
             Provider.of<UserProvider>(context, listen: false)
                 .updateUserAfterOTP(userName, userId, token);
-            Navigator.pushReplacement(
-                context, MaterialPageRoute(builder: (context) => HomePage()));
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => const HomePage()));
           } else {
             _showSnackBar(context, 'Invalid user ID received.', Colors.red);
           }
         } else {
           // Handle unregistered user scenario
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => SignUpScreen()));
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => const SignUpScreen()));
         }
       } else {
         // OTP verification failed
@@ -145,13 +145,13 @@ class SignInViewModel extends ChangeNotifier {
         content: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Icon(Icons.error_outline, color: Colors.white),
-            SizedBox(width: 8), // Space between the icon and text
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 8), // Space between the icon and text
             Expanded(
               child: Text(
                 message,
                 textAlign: TextAlign.left,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16.0,
                 ),
@@ -164,9 +164,9 @@ class SignInViewModel extends ChangeNotifier {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24.0),
         ),
-        margin: EdgeInsets.all(12),
-        padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
-        duration: Duration(seconds: 4),
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -242,7 +242,7 @@ class SignInViewModel extends ChangeNotifier {
 
     // Navigate to HomeScreen or other appropriate screen
     Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => HomePage()));
+        context, MaterialPageRoute(builder: (context) => const HomePage()));
   }
 
   // Start Check if the registration data fields are valid
