@@ -5,6 +5,7 @@ class PreferencesService {
     try {
       final SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString(key, value);
+      print("Data is saved in shared preferences.");
     } catch (e) {
       print("Error saving to SharedPreferences: $e");
       throw Exception('Failed to save preferences');
@@ -29,5 +30,17 @@ class PreferencesService {
       print("Error removing from SharedPreferences: $e");
       throw Exception('Failed to remove preference');
     }
+  }
+
+  Future<void> saveCurrentAddress(String address) async {
+    await save('current_address', address);
+  }
+
+  Future<String?> loadCurrentAddress() async {
+    return await load('current_address');
+  }
+
+  Future<void> removeCurrentAddress() async {
+    await remove('current_address');
   }
 }

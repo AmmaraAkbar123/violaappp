@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:viola/auth/view_model.dart';
+import 'package:viola/pages/category_screen.dart';
 import 'package:viola/pages/home_page.dart';
 import 'package:viola/providers/adress_provider.dart';
 import 'package:viola/pages/splashscreen.dart';
@@ -12,10 +13,12 @@ import 'package:viola/providers/map_provider.dart';
 import 'package:viola/providers/open_store_provider.dart';
 import 'package:viola/providers/user_provider.dart';
 import 'package:viola/services/api_services/authentication_service.dart';
-import 'package:viola/services/api_services/search_api_service.dart';
+import 'package:viola/providers/search_provider.dart';
+import 'package:viola/services/shared_preff/shared_preferences.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
   runApp(const MyApp());
 }
 
@@ -61,7 +64,7 @@ class MyApp extends StatelessWidget {
         ),
 
         ChangeNotifierProvider(
-          create: (_) => MapProvider(),
+          create: (_) => MapProvider(PreferencesService()),
         ),
         ChangeNotifierProvider(
           create: (_) => FeatureDataProvider(),
@@ -81,7 +84,11 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         home: const SplashScreen(),
-        routes: {"/home": (context) => const HomePage()},
+        routes: {
+          "/home": (context) => const HomePage(),
+          "/category": (context) => const CategoryScreen()
+        },
+        // initialRoute: "/home",
       ),
     );
   }

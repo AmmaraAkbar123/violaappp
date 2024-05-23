@@ -10,11 +10,12 @@ class User {
   bool isLoggedIn;
   bool isOTPVerified; // Track OTP verification status
 
-  User(
-      {this.name = '',
-      this.isLoggedIn = false,
-      this.userId = 0,
-      this.isOTPVerified = false});
+  User({
+    this.name = '',
+    this.isLoggedIn = false,
+    this.userId = 0,
+    this.isOTPVerified = false,
+  });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
         name: json['name'],
@@ -37,13 +38,15 @@ class UserProvider with ChangeNotifier {
   User _user = User();
   User get user => _user;
 
+  List<LocationData> _savedLocations = [];
+
   UserProvider() {
     _initializeUser();
   }
 
   Future<void> _initializeUser() async {
-    await loadUserFromPrefs(); // Make sure this loads the user info first
-    await checkLoginStatus(); // Then check the token validity
+    await loadUserFromPrefs();
+    await checkLoginStatus();
   }
 
   Future<void> checkLoginStatus() async {
@@ -58,16 +61,17 @@ class UserProvider with ChangeNotifier {
 
   void login(String name, int userId, String token) async {
     _user.name = name;
-    _user.userId = userId; // Make sure to set the userId here.
+    _user.userId = userId;
     _user.isLoggedIn = true;
     await _authService.saveToken(token);
     await saveUserToPrefs();
+    await loadLocationsFromPrefs();
     notifyListeners();
   }
 
   void verifyOTP() {
     _user.isOTPVerified = true;
-    saveUserToPrefs(); // Save the updated OTP verification status
+    saveUserToPrefs();
     notifyListeners();
   }
 
@@ -80,77 +84,81 @@ class UserProvider with ChangeNotifier {
       _authService.saveToken(token);
     }
     saveUserToPrefs();
+    loadLocationsFromPrefs();
     notifyListeners();
   }
 
   void logout() async {
     await _authService.clearToken();
-    _user = User(); // Reset user to default state
-    await clearUserFromPrefs();
+    _user = User();
     notifyListeners();
   }
 
   Future<void> saveUserToPrefs() async {
     String userJson = json.encode(_user.toJson());
-    print('Saving User: $userJson'); // Debug statement
     await _prefsService.save('user', userJson);
   }
 
   Future<void> loadUserFromPrefs() async {
     String? userJson = await _prefsService.load('user');
-    print('Loaded User JSON: $userJson'); // Debug statement
     if (userJson != null) {
       _user = User.fromJson(json.decode(userJson));
       notifyListeners();
     }
     await checkLoginStatus();
+    await loadLocationsFromPrefs();
   }
-
-  Future<void> clearUserFromPrefs() async {
-    await _prefsService.remove('user');
-  }
-
-  // to save location in address selection screen
-  List<LocationData> _savedLocations = [];
 
   List<LocationData> get savedLocations => _savedLocations;
-
   void addLocation(String name, LatLng position) {
-    _savedLocations.add(LocationData(name: name, position: position));
-    saveLocationsToPrefs();
-    notifyListeners();
-  }
+    // Check if the location is already saved
+    bool isDuplicate = _savedLocations.any((location) =>
+        location.name == name &&
+        location.position.latitude == position.latitude &&
+        location.position.longitude == position.longitude);
 
-  void removeLocation(int index) {
-    _savedLocations.removeAt(index);
-    saveLocationsToPrefs();
-    notifyListeners();
-  }
-
-  Future<void> saveLocationsToPrefs() async {
-    List<String> locationsJson = _savedLocations
-        .map((location) => json.encode(location.toJson()))
-        .toList();
-    await _prefsService.save('locations', json.encode(locationsJson));
-  }
-
-  Future<void> loadLocationsFromPrefs() async {
-    String? locationsJson = await _prefsService.load('locations');
-    if (locationsJson != null) {
-      List<dynamic> locationsList = json.decode(locationsJson);
-      _savedLocations = locationsList
-          .map((location) => LocationData.fromJson(json.decode(location)))
-          .toList();
+    if (!isDuplicate) {
+      _savedLocations.add(LocationData(name: name, position: position));
+      saveLocationsToPrefs();
       notifyListeners();
     }
   }
 
-  Future<List<Map<String, dynamic>>> getLocations(String userId) async {
-    await loadLocationsFromPrefs(); // Ensure locations are loaded from prefs
+  Future<void> saveLocationsToPrefs() async {
+    if (_user.userId == 0) return; // Ensure userId is valid
+
+    List<String> locationsJson = _savedLocations
+        .map((location) => json.encode(location.toJson()))
+        .toList();
+    await _prefsService.save('locations_${_user.userId}',
+        json.encode(locationsJson)); // Include user ID in the key
+  }
+
+  Future<void> loadLocationsFromPrefs() async {
+    if (_user.userId == 0) return; // Ensure userId is valid
+
+    String? locationsJson = await _prefsService
+        .load('locations_${_user.userId}'); // Include user ID in the key
+    if (locationsJson != null) {
+      try {
+        List<dynamic> locationsList = json.decode(locationsJson);
+        _savedLocations = locationsList
+            .map((location) => LocationData.fromJson(location))
+            .toList();
+        notifyListeners();
+      } catch (e) {
+        print('Error decoding locations JSON: $e');
+      }
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getLocations() async {
+    await loadLocationsFromPrefs();
     return _savedLocations.map((location) {
       return {
         'name': location.name,
-        'latLng': location.position,
+        'latitude': location.position.latitude,
+        'longitude': location.position.longitude,
       };
     }).toList();
   }
@@ -165,10 +173,9 @@ class LocationData {
   factory LocationData.fromJson(Map<String, dynamic> json) {
     return LocationData(
       name: json['name'],
-      position: LatLng(json['latitude'], json['longitude']),
+      position: LatLng(json['latitude'] as double, json['longitude'] as double),
     );
   }
-
   Map<String, dynamic> toJson() {
     return {
       'name': name,

@@ -67,7 +67,7 @@ class CategoryProvider extends ChangeNotifier {
   // Fetch salons based on selected category IDs
   Future<void> fetchSalonsByCategory() async {
     if (selectedCategoryIds.isEmpty) {
-      throw Exception("Please select at least one category to filter by.");
+      throw ("Please select at least one category.");
     }
     try {
       // Use SalonFilterService to fetch filtered salons
@@ -76,7 +76,7 @@ class CategoryProvider extends ChangeNotifier {
           categoryIds: selectedCategoryIds);
       notifyListeners(); // Notify listeners about the update
     } catch (e) {
-      throw Exception('Error fetching filtered salons: $e');
+      throw ('Error fetching filtered salons: $e');
     }
   }
 

@@ -41,7 +41,7 @@ class SignInViewModel extends ChangeNotifier {
       var responseData = jsonDecode(response.body);
       isUserRegistered = responseData['success'];
       print("Is user registered: $isUserRegistered");
-      _showSnackBar(context, responseData['message'], Colors.blue);
+      _showSnackBar(context, responseData['message'], Colors.green);
       sendOTP(context); // Always proceed to send OTP after initial check
     } else {
       _showServerError(context, response.body);
@@ -55,7 +55,7 @@ class SignInViewModel extends ChangeNotifier {
       Uri.parse(ApiConstants.verifyPhoneNumberUrl),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        "phone_number": "+966" + phoneController.text.trim(),
+        "phone_number": "+966${phoneController.text.trim()}",
         "send_otp": true // Requesting to send OTP
       }),
     );
@@ -187,7 +187,7 @@ class SignInViewModel extends ChangeNotifier {
 
     Map<String, dynamic> data = {
       "name": nameController.text.trim(),
-      "phone_number": "+966" + phoneController.text.trim(),
+      "phone_number": "+966${phoneController.text.trim()}",
       "city": locationController.text.trim(),
       "device_token":
           "" // This might be used for push notifications, adjust as needed

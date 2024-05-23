@@ -15,7 +15,6 @@ class LocationsScreen extends StatefulWidget {
 
 class _LocationsScreenState extends State<LocationsScreen> {
   int? _selectedOption;
-  List<LocationData> _locations = [];
 
   @override
   void initState() {
@@ -26,9 +25,6 @@ class _LocationsScreenState extends State<LocationsScreen> {
   Future<void> _fetchLocations() async {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     await userProvider.loadLocationsFromPrefs();
-    setState(() {
-      _locations = userProvider.savedLocations;
-    });
   }
 
   @override
@@ -55,63 +51,64 @@ class _LocationsScreenState extends State<LocationsScreen> {
           color: Color.fromRGBO(75, 0, 95, 1),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            if (_locations.isEmpty)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    children: [
-                      const SizedBox(
-                        height: 80,
+      body: Consumer<UserProvider>(
+        builder: (context, userProvider, child) {
+          final locations = userProvider.savedLocations;
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                if (locations.isEmpty)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 80),
+                          Image.asset("assets/images/location.png",
+                              height: 200),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'Please add locations to see them here.',
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ],
                       ),
-                      Image.asset(
-                        "assets/images/location.png",
-                        height: 200,
+                    ),
+                  )
+                else
+                  Directionality(
+                    textDirection: TextDirection.rtl,
+                    child: Center(
+                      child: Container(
+                        margin: const EdgeInsets.all(15),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
+                          itemCount: locations.length,
+                          itemBuilder: (context, index) {
+                            return _buildRadioTile(context, index, locations);
+                          },
+                        ),
                       ),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      const Text(
-                        'Please add locations to see them here.',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            else
-              Directionality(
-                textDirection: TextDirection.rtl,
-                child: Center(
-                  child: Container(
-                    margin: const EdgeInsets.all(15),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.fromLTRB(0, 10, 0, 10),
-                      itemCount: _locations.length,
-                      itemBuilder: (context, index) {
-                        return _buildRadioTile(index);
-                      },
                     ),
                   ),
-                ),
-              ),
-          ],
-        ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildRadioTile(int index) {
+  Widget _buildRadioTile(
+      BuildContext context, int index, List<LocationData> locations) {
     final dataProvider = Provider.of<MyDataApiProvider>(context, listen: false);
-    Provider.of<MapProvider>(context, listen: false);
+    final mapProvider = Provider.of<MapProvider>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-    String name = _locations[index].name;
-    LatLng latLng = _locations[index].position;
+    String name = locations[index].name;
+    LatLng latLng = locations[index].position;
 
     return Column(
       children: [
@@ -120,15 +117,11 @@ class _LocationsScreenState extends State<LocationsScreen> {
             value: index,
             groupValue: _selectedOption,
             onChanged: (int? value) {
-              setState(() {
-                _selectedOption = value;
-              });
-
-              // Update the provider with the selected LatLng
+              _selectedOption = value;
               dataProvider.updateLocation(
                   latLng.longitude.toString(), latLng.latitude.toString());
-
-              // Navigate to the home screen and clear the navigation stack
+              mapProvider.updateCurrentAddress(name);
+              userProvider.addLocation(name, latLng);
               Navigator.of(context)
                   .pushNamedAndRemoveUntil('/home', (route) => false);
             },

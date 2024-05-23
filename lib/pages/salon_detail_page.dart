@@ -6,6 +6,8 @@ import 'package:viola/json_models/mydata_model.dart';
 import 'package:viola/providers/data_api_provider.dart';
 import 'package:viola/providers/favorite_provider.dart';
 import 'package:viola/widgets/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:io' show Platform;
 
 class SalonDetailPage extends StatefulWidget {
   final int salonId;
@@ -126,6 +128,87 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
     bool isClosed = salon.closed;
     String openCloseText = isClosed ? "مغلق" : "مفتوح";
 
+    void _launchURL(String url) async {
+      if (await canLaunch(url)) {
+        await launch(url);
+      } else {
+        throw 'Could not launch $url';
+      }
+    }
+
+    void makePhoneCall(String phoneNumber) async {
+      final url = 'tel:$phoneNumber';
+      if (await canLaunch(url)) {
+        await launch(url);
+      } else {
+        throw 'Could not launch $url';
+      }
+    }
+
+    void _openMap(BuildContext context, double latitude, double longitude) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('اختر تطبيق الخريطة'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                if (Platform.isIOS) ...[
+                  ListTile(
+                    leading: Icon(Icons.map),
+                    title: Text('Apple Maps'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _launchURL(
+                          'http://maps.apple.com/?q=$latitude,$longitude');
+                    },
+                  ),
+                ],
+                ListTile(
+                  leading: Icon(Icons.map),
+                  title: Text('Google Maps'),
+                  onTap: () {
+                    if (Platform.isIOS) {
+                      SnackBar(
+                        content: Text('Google Maps is not available on iOS.'),
+                        duration: Duration(seconds: 1),
+                      );
+                    } else {
+                      Navigator.of(context).pop();
+                      _launchURL(
+                          'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
+                    }
+                  },
+                ),
+                if (Platform.isAndroid) ...[
+                  ListTile(
+                    leading: Icon(Icons.map),
+                    title: Text('Apple Maps'),
+                    onTap: () {
+                      SnackBar(
+                        content:
+                            Text('Apple Maps is not available on Android.'),
+                        duration: Duration(seconds: 1),
+                      );
+                    },
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    // void launchURL(String url) async {
+    //   if (await canLaunch(url)) {
+    //     await launch(url);
+    //   } else {
+    //     throw 'Could not launch $url';
+    //   }
+    // }
+
     return Card(
       surfaceTintColor: Colors.white,
       elevation: 4,
@@ -178,11 +261,57 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconCard(FontAwesomeIcons.xTwitter),
-                IconCard(FontAwesomeIcons.instagram),
-                IconCard(Icons.phone),
-                IconCard(FontAwesomeIcons.whatsapp),
-                IconCard(Icons.directions),
+                Card(
+                  color: const Color.fromARGB(255, 241, 222, 245),
+                  child: IconButton(
+                    icon: Icon(
+                      FontAwesomeIcons.xTwitter,
+                      color: const Color.fromRGBO(75, 0, 95, 1),
+                    ),
+                    onPressed: () => _launchURL('https://twitter.com/'),
+                  ),
+                ),
+                Card(
+                  color: const Color.fromARGB(255, 241, 222, 245),
+                  child: IconButton(
+                    icon: Icon(
+                      FontAwesomeIcons.instagram,
+                      color: const Color.fromRGBO(75, 0, 95, 1),
+                    ),
+                    onPressed: () => _launchURL('https://instagram.com/'),
+                  ),
+                ),
+                Card(
+                  color: const Color.fromARGB(255, 241, 222, 245),
+                  child: IconButton(
+                    icon: Icon(
+                      FontAwesomeIcons.phone,
+                      color: const Color.fromRGBO(75, 0, 95, 1),
+                    ),
+                    onPressed: () => makePhoneCall(salon.phoneNumber),
+                  ),
+                ),
+                Card(
+                  color: const Color.fromARGB(255, 241, 222, 245),
+                  child: IconButton(
+                    icon: Icon(
+                      FontAwesomeIcons.whatsapp,
+                      color: const Color.fromRGBO(75, 0, 95, 1),
+                    ),
+                    onPressed: () => _launchURL("https://www.whatsapp.com/"),
+                  ),
+                ),
+                Card(
+                  color: const Color.fromARGB(255, 241, 222, 245),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.directions,
+                      color: const Color.fromRGBO(75, 0, 95, 1),
+                    ),
+                    onPressed: () =>
+                        _openMap(context, salon.latitude, salon.longitude),
+                  ),
+                ),
               ],
             ),
             salon.bookingMethod.isNotEmpty
@@ -193,20 +322,6 @@ class _SalonDetailPageState extends State<SalonDetailPage> {
                 : const SizedBox.shrink(),
           ],
         ),
-      ),
-    );
-  }
-
-  // ignore: non_constant_identifier_names
-  Widget IconCard(IconData icon) {
-    return Card(
-      color: const Color.fromARGB(255, 241, 222, 245),
-      child: IconButton(
-        icon: Icon(
-          icon,
-          color: const Color.fromRGBO(75, 0, 95, 1),
-        ),
-        onPressed: () {},
       ),
     );
   }

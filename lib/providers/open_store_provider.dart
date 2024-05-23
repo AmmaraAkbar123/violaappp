@@ -47,4 +47,15 @@ class OpenStoreProvider extends ChangeNotifier {
       hasMore = false;
     }
   }
+
+  // Method to fetch the next page of data
+  Future<void> fetchNextPage() async {
+    if (!isLoading && hasMore && error == null) {
+      isLoading = true;
+      notifyListeners();
+      await _fetchOpenStores();
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 }

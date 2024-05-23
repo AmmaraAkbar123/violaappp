@@ -12,8 +12,11 @@ class SearchProvider extends ChangeNotifier {
   Future<void> performSearch(String query) async {
     query = query.trim();
     if (query.isEmpty || query.length < 3) {
-      _searchResults.clear();
-      notifyListeners();
+      if (_searchResults.isNotEmpty) {
+        _searchResults
+            .clear(); // Clear the results if query is empty or too short
+        notifyListeners(); // Notify listeners after clearing the results
+      }
       return;
     }
 
@@ -25,16 +28,21 @@ class SearchProvider extends ChangeNotifier {
         var jsonData = json.decode(response.body);
         _searchResults =
             List<Datum>.from(jsonData['data'].map((x) => Datum.fromJson(x)));
-        notifyListeners();
+        notifyListeners(); // Notify listeners after updating the results
       } else {
-        _searchResults.clear(); // Clear the results on error
-        notifyListeners();
         throw Exception('Failed to load data');
       }
     } catch (e) {
-      _searchResults.clear(); // Clear the results on exception
-      notifyListeners();
       print('Error searching salons: $e');
+      _searchResults.clear(); // Clear the results on exception
+      notifyListeners(); // Notify listeners after clearing the results
+    }
+  }
+
+  void clearSearch() {
+    if (_searchResults.isNotEmpty) {
+      _searchResults.clear();
+      notifyListeners(); // Notify listeners after clearing the results
     }
   }
 }

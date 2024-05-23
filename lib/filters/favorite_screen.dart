@@ -21,7 +21,7 @@ class FavoriteScreen extends StatelessWidget {
             style: TextStyle(color: Colors.purple),
           ),
           centerTitle: true,
-          iconTheme: IconThemeData(color: Colors.purple),
+          iconTheme: const IconThemeData(color: Colors.purple),
         ),
         body: Padding(
           padding: const EdgeInsets.only(left: 15, right: 15),
@@ -32,7 +32,7 @@ class FavoriteScreen extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      SizedBox(
+                      const SizedBox(
                         height: 120,
                       ),
                       Image.asset(
@@ -40,7 +40,7 @@ class FavoriteScreen extends StatelessWidget {
                         height: 200,
                         fit: BoxFit.cover,
                       ),
-                      Text('No favorites added'),
+                      const Text('No favorites added'),
                     ],
                   ),
                 );
@@ -73,7 +73,7 @@ class FavoriteScreen extends StatelessWidget {
       builder: (context, AsyncSnapshot<Datum> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           // Return a placeholder widget while data is loading
-          return SizedBox.shrink();
+          return const SizedBox.shrink();
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else if (snapshot.hasData) {

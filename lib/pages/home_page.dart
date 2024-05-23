@@ -1,6 +1,8 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:viola/auth/view_model.dart';
 import 'package:viola/filters/offers_screen.dart';
@@ -23,6 +25,7 @@ import 'package:viola/utils/padding_margin.dart';
 import 'package:viola/widgets/banner_card.dart';
 import 'package:viola/widgets/drawer.dart';
 import 'package:viola/widgets/horizontal_card.dart';
+import 'package:viola/widgets/location-permission_dialog.dart';
 import 'package:viola/widgets/main_containers.dart';
 
 class HomePage extends StatefulWidget {
@@ -36,26 +39,94 @@ class _HomePageState extends State<HomePage> {
   final ValueNotifier<bool> _isLoading = ValueNotifier(true);
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScrollController _scrollController = ScrollController();
-  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+
     Future.delayed(Duration.zero, checkLoading);
     SchedulerBinding.instance.addPostFrameCallback((_) {
       handleRefresh();
       Provider.of<MapProvider>(context, listen: false)
-          .determineCurrentPosition();
+          .determineCurrentPosition(context);
     });
     _scrollController.addListener(_handleScroll);
+    // Check location permission as soon as the HomePage is displayed
+    homeLocationPermission(context);
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     _isLoading.dispose();
-    _searchController.dispose();
+
     super.dispose();
+  }
+
+  Future<void> homeLocationPermission(BuildContext context) async {
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    print('Initial permission status: $permission');
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      await showPermissionDialog(context);
+      permission = await Geolocator.checkPermission();
+      print('Permission status after dialog: $permission');
+    }
+
+    // If permission is granted, exit the recursion
+    if (permission == LocationPermission.always ||
+        permission == LocationPermission.whileInUse) {
+      await Provider.of<MapProvider>(context, listen: false)
+          .determineCurrentPosition(context);
+      print('Permission granted, exiting');
+      return;
+    }
+
+    // If permission is still denied, recall the permission function
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      print('Permission denied, recalling permission function');
+      await homeLocationPermission(context);
+    }
+  }
+
+  Future<void> showPermissionDialog(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return LocationPermissionDialog(
+          onRequestPermission: () async {
+            Navigator.of(context).pop(); // Close the dialog first
+            LocationPermission permission =
+                await Geolocator.requestPermission();
+            // Re-check permission after requesting
+            if (permission == LocationPermission.always ||
+                permission == LocationPermission.whileInUse) {
+              print('Permission granted after requesting, exiting');
+              return;
+            }
+            await homeLocationPermission(context); // Re-call the function
+          },
+          onOpenSettings: () async {
+            Navigator.of(context).pop(); // Close the dialog first
+            await openAppSettings();
+            // Re-check permission after opening settings
+            await homeLocationPermission(context);
+          },
+        );
+      },
+    );
+  }
+
+  void openLocationSettings() {
+    openAppSettings().then((_) {
+      print('Opened app settings');
+    }).catchError((error) {
+      print('Error opening app settings: $error');
+    });
   }
 
   void checkLoading() async {
@@ -96,16 +167,22 @@ class _HomePageState extends State<HomePage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => userProvider.user.isLoggedIn
-                      ? GoogleMapPage()
-                      : LoginPageScreen(),
-                ));
+                      ? const GoogleMapPage()
+                      : const LoginPageScreen(),
+                )).then((_) {
+              // Fetch the current address after navigating back to the HomePage
+              if (userProvider.user.isLoggedIn) {
+                Provider.of<MapProvider>(context, listen: false)
+                    .determineCurrentPosition(context);
+              }
+            });
           },
-          child: Container(
+          child: SizedBox(
             width: double.infinity,
             child: Consumer<MapProvider>(
               builder: (context, mapProvider, child) {
                 // Print the current address for debugging
-                print('Current Address: ${mapProvider.currentAddress}');
+                print(' ${mapProvider.currentAddress}');
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: <Widget>[
@@ -151,7 +228,7 @@ class _HomePageState extends State<HomePage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => SearchResultScreen()),
+                              builder: (context) => const SearchResultScreen()),
                         );
                       },
                       child: AbsorbPointer(
@@ -399,8 +476,8 @@ class _HomePageState extends State<HomePage> {
                               height: 40,
                             ),
                             Image.asset(
-                              "assets/images/searches.png",
-                              height: 120,
+                              "assets/images/search_folder.gif",
+                              height: 130,
                             ),
                             const SizedBox(
                               height: 30,
@@ -419,7 +496,7 @@ class _HomePageState extends State<HomePage> {
                                 valueListenable: _isLoading,
                                 builder: (context, bool isLoading, _) {
                                   if (isLoading) {
-                                    return Column(
+                                    return const Column(
                                       children: [
                                         SizedBox(
                                           height: 170,

@@ -21,10 +21,12 @@ class AddressProvider with ChangeNotifier {
   }
 
   Future<void> fetchLocations(UserProvider userProvider) async {
+    // Load locations specific to the current user
     await userProvider.loadLocationsFromPrefs();
     _locations = userProvider.savedLocations;
     notifyListeners();
   }
+
 // end add adresss in adress selection screen
 
 //start get current city name in signuPpage

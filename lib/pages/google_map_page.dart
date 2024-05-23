@@ -21,7 +21,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<MapProvider>(context, listen: false)
-          .determineCurrentPosition();
+          .determineCurrentPosition(context);
       Provider.of<MapProvider>(context, listen: false).resetPositionFetched();
     });
   }
@@ -47,11 +47,12 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
             GoogleMap(
               initialCameraPosition: mapProvider.defaultPosition,
               mapType: MapType.normal,
-              onMapCreated: mapProvider.onMapCreated,
-              onTap: mapProvider.handleTap,
-              onCameraMove: mapProvider.onCameraMove,
-              onCameraMoveStarted: mapProvider.onCameraMoveStarted,
-              onCameraIdle: mapProvider.onCameraIdle,
+              onMapCreated: (controller) =>
+                  mapProvider.onMapCreated(controller, context),
+              onTap: (tappedPoint) => mapProvider.handleTap(tappedPoint),
+              onCameraMove: (position) => mapProvider.onCameraMove(position),
+              onCameraMoveStarted: () => mapProvider.onCameraMoveStarted(),
+              onCameraIdle: () => mapProvider.onCameraIdle(),
               myLocationEnabled: true,
               myLocationButtonEnabled: true,
               padding: const EdgeInsets.only(top: 80, bottom: 40),
@@ -119,6 +120,7 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
     final dataProvider = Provider.of<MyDataApiProvider>(context, listen: false);
     final categoryProvider =
         Provider.of<CategoryProvider>(context, listen: false);
+    final mapProvider = Provider.of<MapProvider>(context, listen: false);
 
     return Positioned.fill(
       child: Container(
@@ -217,9 +219,13 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                       child: ElevatedButton(
                         onPressed: () async {
                           if (userProvider.user.isLoggedIn) {
+                            // Fetch position only when button is pressed
+                            await mapProvider.determineCurrentPosition(context);
                             double latitude = provider.lastMapPosition.latitude;
                             double longitude =
                                 provider.lastMapPosition.longitude;
+                            String address = await mapProvider
+                                .getAddressFromLatLng(latitude, longitude);
 
                             dataProvider.updateLocation(
                                 longitude.toString(), latitude.toString());
@@ -231,10 +237,8 @@ class _GoogleMapPageState extends State<GoogleMapPage> {
                             Navigator.of(context).pushNamedAndRemoveUntil(
                                 '/home', (route) => false);
                             //save locations in address selection screen
-                            Provider.of<MapProvider>(context, listen: false)
-                                .saveCurrentLocation(Provider.of<UserProvider>(
-                                    context,
-                                    listen: false));
+                            userProvider.addLocation(
+                                address, LatLng(latitude, longitude));
                           } else {
                             Navigator.push(
                               context,

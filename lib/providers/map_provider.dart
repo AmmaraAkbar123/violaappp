@@ -5,13 +5,12 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:debounce_throttle/debounce_throttle.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:viola/auth/api_constant.dart';
 import 'package:viola/json_models/mydata_model.dart';
-import 'package:viola/providers/user_provider.dart';
+import 'package:viola/services/shared_preff/shared_preferences.dart';
 
 class MapProvider extends ChangeNotifier {
-  GoogleMapController? mapController; // Updated to nullable type
+  GoogleMapController? mapController;
   final TextEditingController searchController = TextEditingController();
   String currentAddress = 'Finding address...';
   Set<Marker> markers = {};
@@ -24,21 +23,6 @@ class MapProvider extends ChangeNotifier {
       'AIzaSyAL4OhK2DnU0XMcj0VZgwfc4DKRKLdOdv0'; // Store this securely
   bool _isPositionFetched = false;
 
-  LatLng get currentLatLng => lastMapPosition;
-
-  // Method to update the camera position based on an address
-  Future<void> navigateToAddress(LatLng latLng) async {
-    await updateCameraPosition(latLng.latitude, latLng.longitude);
-    await updateAddressAndMarker(latLng.latitude, latLng.longitude);
-  }
-
-  // to save location in address selection screen
-  void saveCurrentLocation(UserProvider userProvider, {bool forceSave = true}) {
-    if (forceSave) {
-      userProvider.addLocation(currentAddress, lastMapPosition);
-    }
-  }
-
   // Debouncer for search input to limit API calls
   final debounce =
       Debouncer<String>(const Duration(milliseconds: 500), initialValue: '');
@@ -48,8 +32,9 @@ class MapProvider extends ChangeNotifier {
     zoom: 14,
   );
 
-  MapProvider() {
-    // Set up the debounce callback
+  final PreferencesService preferencesService;
+
+  MapProvider(this.preferencesService) {
     debounce.values.listen((query) {
       fetchSuggestions(query, apiKey).then((newSuggestions) {
         suggestions = newSuggestions;
@@ -59,69 +44,30 @@ class MapProvider extends ChangeNotifier {
         print("Error fetching suggestions: $e");
       });
     });
+
+    loadCurrentAddress();
   }
 
-  void onMapCreated(GoogleMapController controller) {
+  void onMapCreated(GoogleMapController controller, BuildContext context) {
     mapController = controller;
-    determineCurrentPosition(); // Ensure this is called after mapController is initialized
+    determineCurrentPosition(context);
   }
 
   void resetPositionFetched() {
     _isPositionFetched = false;
   }
 
-  Future<void> determineCurrentPosition() async {
+  Future<void> determineCurrentPosition(BuildContext context) async {
     if (_isPositionFetched) {
-      // Position already fetched, no need to fetch again
       return;
     }
 
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        currentAddress = 'Location services are disabled.';
-        notifyListeners();
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        // Location permission denied, request it again
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          // Location permission denied again, navigate to app settings
-          openLocationSettings();
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        currentAddress =
-            'Location permissions are permanently denied, we cannot request permissions.';
-        notifyListeners();
-        return;
-      }
-
-      // Map is ready, fetch current position
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      await updateCameraPosition(position.latitude, position.longitude);
-      await updateAddressAndMarker(position.latitude, position.longitude);
-      _isPositionFetched = true; // Update flag
-    } catch (e) {
-      print('Error fetching location: $e');
-      currentAddress = 'Error fetching location: $e';
-      notifyListeners();
-    }
-  }
-
-// on deny redirect the user to setting for permission
-  void openLocationSettings() {
-    openAppSettings().then((_) {
-      print('Opened app settings');
-    }).catchError((error) {
-      print('Error opening app settings: $error');
-    });
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+    await updateCameraPosition(position.latitude, position.longitude);
+    await updateAddressAndMarker(position.latitude, position.longitude);
+    _isPositionFetched = true;
+    print("determine curent adressssssssssssssssssssssss");
   }
 
   Future<void> updateAddressAndMarker(double latitude, double longitude) async {
@@ -141,7 +87,7 @@ class MapProvider extends ChangeNotifier {
     } catch (e) {
       currentAddress = "Failed to get address: ${e.toString()}";
     }
-
+    print("updateAddressAndMarker amara");
     notifyListeners();
   }
 
@@ -162,24 +108,28 @@ class MapProvider extends ChangeNotifier {
 
   void onCameraMoveStarted() {
     showCard = false;
+    print("onCameraMoveStarted amara");
     notifyListeners();
   }
 
   void onCameraIdle() {
     updateAddressAndMarker(lastMapPosition.latitude, lastMapPosition.longitude);
     showCard = true;
+    print("onCameraIdle amara");
     notifyListeners();
   }
 
   void onCameraMove(CameraPosition position) {
     lastMapPosition = position.target;
-    notifyListeners();
+    print("onCameraMove amara");
+    // notifyListeners();
   }
 
   Future<void> updateCameraPosition(double latitude, double longitude) async {
     LatLng newPosition = LatLng(latitude, longitude);
     if (newPosition != lastMapPosition) {
       lastMapPosition = newPosition;
+      print("updateCameraPosition amara");
       notifyListeners();
     }
     if (mapController != null) {
@@ -191,21 +141,22 @@ class MapProvider extends ChangeNotifier {
     await updateCameraPosition(tappedPoint.latitude, tappedPoint.longitude);
     await updateAddressAndMarker(tappedPoint.latitude, tappedPoint.longitude);
     lastMapPosition = tappedPoint;
+    print("handleTap amara");
     notifyListeners();
   }
 
   void onLocationSelected(
       LatLng selectedLocation, Function updateLocationCallback) {
     lastMapPosition = selectedLocation;
-    updateLocationCallback(
-        selectedLocation); // Pass the selectedLocation to the callback
-    // Do not update the current address here
+    updateLocationCallback(selectedLocation);
+    print("onLocationSelected amara");
+
     notifyListeners();
   }
 
   Future<LatLng> fetchPlaceDetails(String placeId, String apiKey) async {
     final String url =
-        '${ApiConstants.googlePlaceDetailsUrl}?placeid=$placeId&key=$apiKey';
+        '${ApiConstants.googlePlaceDetailsUrl}json?placeid=$placeId&key=$apiKey';
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
@@ -224,11 +175,11 @@ class MapProvider extends ChangeNotifier {
   }
 
   Future<List<String>> fetchSuggestions(String input, String apiKey) async {
-    final String url =
-        '${ApiConstants.googlePlaceAutocompleteUrl}?input=$input&key=$apiKey';
+    const String baseURL = ApiConstants.googlePlaceAutocompleteUrl;
+    String request = '$baseURL?input=$input&key=$apiKey';
 
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(Uri.parse(request));
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
         if (result['status'] == 'OK') {
@@ -258,10 +209,14 @@ class MapProvider extends ChangeNotifier {
         updateCameraPosition(latLng.latitude, latLng.longitude);
         getAddressFromLatLng(latLng.latitude, latLng.longitude).then((address) {
           currentAddress = address;
+          print("searchAndNavigate amara");
+
           notifyListeners();
         }).catchError((e) {
           print("Error getting address: $e");
           currentAddress = "Failed to get address";
+          print("searchAndNavigate amara 2");
+
           notifyListeners();
         });
       }).catchError((e) {
@@ -274,6 +229,27 @@ class MapProvider extends ChangeNotifier {
     searchController.text = suggestion;
     showSuggestions = false;
     searchAndNavigate(suggestion);
+    print("selectSuggestion amara");
+
+    notifyListeners();
+  }
+
+  Future<void> loadCurrentAddress() async {
+    String? address = await preferencesService.loadCurrentAddress();
+    if (address != null) {
+      currentAddress = address;
+    } else {
+      currentAddress = 'Finding address...';
+    }
+    print("loadCurrentAddress amara");
+
+    notifyListeners();
+  }
+
+  void updateCurrentAddress(String address) {
+    currentAddress = address;
+    print("updateCurrentAddress amara");
+
     notifyListeners();
   }
 }

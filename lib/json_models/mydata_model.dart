@@ -116,6 +116,8 @@ class Datum {
   String promotions;
   String dailyNotesLength;
   String generalNotesLength;
+  final double latitude;
+  final double longitude;
 
   Datum({
     required this.distance,
@@ -149,10 +151,14 @@ class Datum {
     required this.promotions,
     required this.dailyNotesLength,
     required this.generalNotesLength,
+    required this.latitude,
+    required this.longitude,
   });
 
   factory Datum.fromJson(Map<String, dynamic> json) {
     return Datum(
+        latitude: (json['latitude'] ?? 0).toDouble(),
+        longitude: (json['longitude'] ?? 0).toDouble(),
         distance: (json["distance"] as num?)?.toDouble() ?? 0.0,
         area: (json["area"] as num?)?.toDouble() ?? 0.0,
         id: (json["id"] as num?)?.toInt() ?? 0,

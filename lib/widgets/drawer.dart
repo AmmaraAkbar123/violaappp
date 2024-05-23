@@ -52,9 +52,9 @@ class _NavBarState extends State<NavBar> {
 
   Widget userHeader(UserProvider userProvider) {
     return Container(
-      padding: const EdgeInsets.all(10.0),
+      padding: const EdgeInsets.only(right: 25),
       color: Color.fromRGBO(239, 224, 243, 1),
-      height: 220,
+      height: 200,
       child: userProvider.user.isLoggedIn
           ? loggedInUserView(userProvider)
           : guestUserView(),
@@ -70,13 +70,20 @@ class _NavBarState extends State<NavBar> {
           radius: 40,
           backgroundImage: AssetImage('assets/images/no-avatar.jpg'),
         ),
-        SizedBox(height: 30),
-        Text(
-          userProvider.user.name,
-          style: TextStyle(
+        SizedBox(
+          height: 15,
+        ),
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Text(
+            userProvider.user.name,
+            textAlign: TextAlign.center,
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color.fromRGBO(75, 0, 95, 1)),
+              color: Color.fromRGBO(75, 0, 95, 1),
+            ),
+          ),
         ),
       ],
     );
@@ -124,7 +131,7 @@ class _NavBarState extends State<NavBar> {
   void _showNotImplementedMessage() {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text("This feature is not implemented yet."),
-      duration: Duration(seconds: 2),
+      duration: Duration(seconds: 1),
     ));
   }
 

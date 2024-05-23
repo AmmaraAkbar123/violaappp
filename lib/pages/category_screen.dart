@@ -10,11 +10,31 @@ class CategoryScreen extends StatefulWidget {
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
+  String? errorMessage;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args != null && args is String && errorMessage == null) {
+      errorMessage = args;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            duration: const Duration(milliseconds: 500),
+            content: Text(errorMessage!),
+          ),
+        );
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     // Fetch categories as soon as the widget is initialized and rendered
-    WidgetsBinding.instance!.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<CategoryProvider>(context, listen: false).fetchCategories();
     });
   }
@@ -22,47 +42,50 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   Widget build(BuildContext context) {
     final categoryProvider = Provider.of<CategoryProvider>(context);
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        builder: (_, controller) => Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-            ),
-          ),
-          child: Column(
-            children: [
-              SizedBox(height: 8),
-              buildHandleBar(),
-              Text('الخدمت',
-                  style: TextStyle(
-                      color: Colors.purple,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold)),
-              Expanded(
-                child: ListView.builder(
-                  controller: controller,
-                  itemCount: categoryProvider.categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categoryProvider.categories[index];
-                    return CheckboxListTile(
-                      title: Text(category.name),
-                      value: categoryProvider.selectedCategories[index],
-                      onChanged: (bool? value) {
-                        categoryProvider.toggleCategorySelection(index, value);
-                      },
-                    );
-                  },
-                ),
+    return Scaffold(
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: DraggableScrollableSheet(
+          initialChildSize: 0.9,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          builder: (_, controller) => Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
               ),
-              buildActionButtons(context, categoryProvider),
-            ],
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 8),
+                buildHandleBar(),
+                const Text('الخدمت',
+                    style: TextStyle(
+                        color: Colors.purple,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: ListView.builder(
+                    controller: controller,
+                    itemCount: categoryProvider.categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categoryProvider.categories[index];
+                      return CheckboxListTile(
+                        title: Text(category.name),
+                        value: categoryProvider.selectedCategories[index],
+                        onChanged: (bool? value) {
+                          categoryProvider.toggleCategorySelection(
+                              index, value);
+                        },
+                      );
+                    },
+                  ),
+                ),
+                buildActionButtons(context, categoryProvider),
+              ],
+            ),
           ),
         ),
       ),
@@ -74,7 +97,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       child: Container(
         width: 40,
         height: 4,
-        margin: EdgeInsets.symmetric(vertical: 8),
+        margin: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
           color: Colors.grey[300],
           borderRadius: BorderRadius.circular(10),
@@ -95,28 +118,28 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   await provider.fetchSalonsByCategory();
                   Navigator.of(context).pushReplacementNamed('/home');
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text('Failed to fetch data: ${e.toString()}')),
+                  Navigator.of(context).pushReplacementNamed(
+                    '/category',
+                    arguments: e.toString(),
                   );
                 }
               },
               style: ButtonStyle(
                 backgroundColor: MaterialStateProperty.all<Color>(
-                    Color.fromRGBO(75, 0, 95, 1)),
+                    const Color.fromRGBO(75, 0, 95, 1)),
                 foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
                 padding: MaterialStateProperty.all<EdgeInsets>(
-                    EdgeInsets.symmetric(vertical: 15)),
+                    const EdgeInsets.symmetric(vertical: 15)),
                 shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                   RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
                 ),
               ),
-              child: Text('أختر',
+              child: const Text('أختر',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Expanded(
             child: ElevatedButton(
               onPressed: () {
@@ -125,16 +148,16 @@ class _CategoryScreenState extends State<CategoryScreen> {
               },
               style: ButtonStyle(
                 backgroundColor: MaterialStateProperty.all<Color>(
-                    Color.fromRGBO(75, 0, 95, 1)),
+                    const Color.fromRGBO(75, 0, 95, 1)),
                 foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
                 padding: MaterialStateProperty.all<EdgeInsets>(
-                    EdgeInsets.symmetric(vertical: 15)),
+                    const EdgeInsets.symmetric(vertical: 15)),
                 shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                   RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
                 ),
               ),
-              child: Text('امسح',
+              child: const Text('امسح',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
           ),
